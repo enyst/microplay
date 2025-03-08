@@ -459,7 +459,7 @@ The Mac app will need to implement a SocketIO client to connect to the backend s
 
 ---
 
-## 4. Core Model Categories
+## 4. Data Models
 
 The Mac app requires Swift models that correspond to the backend data structures. Based on the API specifications, these models fall into these categories:
 
