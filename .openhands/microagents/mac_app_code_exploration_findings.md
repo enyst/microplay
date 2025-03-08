@@ -1,7 +1,10 @@
 ---
-name  :  mac_app_code_exploration_findings
-type  :  task
-agent  :  CodeActAgent
+name:  mac_app_code_exploration_findings
+type:  knowledge
+agent:  CodeActAgent
+version: 1.0.1
+triggers:
+- exploration
 ---
 
 # OpenHands Mac App Code Exploration Findings
