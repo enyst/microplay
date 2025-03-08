@@ -5,7 +5,7 @@
  version: 1.0.0
  triggers:
  - mac-types
- ---
+---
 
 # Types for the Mac Client functionality
 
