@@ -181,7 +181,261 @@ The backend is built using FastAPI and provides REST API endpoints and a SocketI
 * `core/config/`: Contains configuration loading logic.
 * `core/exceptions.py`: Defines core exceptions.
 
-## 3. Key Takeaways for Mac App Development (Swift/Cocoa)
+
+## 3.  Backend Communication
+
+The Mac app UI will communicate with the Python backend using **SocketIO**.
+
+### 3.1. SocketIO Interface
+
+The Mac app will interact with the backend server using SocketIO events. The key events are `oh_event` (for receiving events from the backend) and `oh_action` (for sending actions to the backend).
+
+#### 3.1.1. Receiving Events (`oh_event`)
+
+The backend server sends events to the Mac app using the `oh_event` event. Events are serialized as dictionaries in JSON format.
+
+**`oh_event` Data Structure:**
+
+```json
+{
+    "timestamp": "ISO timestamp string",
+    "source": "event source enum value (string)",
+    "message": "event message (string)",
+    // ... other top-level keys ...
+
+    // Action Event:
+    "action": {
+        // Action-specific data
+    },
+    "args": {
+        // Action arguments
+    },
+    "timeout": (optional) timeout value (number)
+
+    // Observation Event:
+    "observation": {
+        // Observation-specific data
+    },
+    "content": "observation content (string)",
+    "extras": {
+        // Extra observation details (dictionary)
+    },
+    "success": (optional) boolean indicating command success
+}
+```
+
+**Example `oh_event`:**
+
+```json
+{
+  "timestamp": "2025-01-31T17:00:00.000Z",
+  "source": "AGENT",
+  "message": "Executing command: ls -l /workspace",
+  "observation": {
+    "observation": "CmdOutputObservation"
+  },
+  "content": "total 4\\ndrwxr-xr-x 1 openhands openhands 4096 Jan 31 16:00 workspace\\n",
+  "extras": {
+    "command": "ls -l /workspace",
+    "cwd": "/workspace",
+    "exit_code": 0
+  },
+  "success": true
+}
+```
+
+#### 3.1.2. Sending Actions (`oh_action`)
+
+### 3.2. Examples of `oh_action` subtypes (from Web UI)
+
+Here are some examples of `oh_action` subtypes that are currently sent by the web UI, based on our code exploration:
+
+#### 3.2.1. Run Command (`"run"`)
+
+*   **Action Type String:** `"run"`
+*   **Backend Action Class:** `CmdRunAction`
+*   **Example `oh_action` Payload (JSON):**
+    ```json
+    {
+      "action": "run",
+      "args": {
+        "command": "ls -l /workspace",
+        "hidden": false
+      }
+    }
+    ```
+*   **Source (Frontend):** `/workspace/playground/frontend/src/hooks/use-terminal.ts` (`getTerminalCommand` function)
+*   **Description:** This action is sent when a user executes a command in the terminal within the web UI. It instructs the backend to run a bash command.
+
+#### 3.2.2. Change Agent State (`"change_agent_state"`)
+
+*   **Action Type String:** `"change_agent_state"`
+*   **Backend Action Class:** `ChangeAgentStateAction`
+*   **Example `oh_action` Payload (JSON):**
+    ```json
+    {
+      "action": "change_agent_state",
+      "args": {
+        "agent_state": "PAUSED"
+      }
+    }
+    ```
+*   **Source (Frontend):** `/workspace/playground/frontend/src/components/features/controls/agent-control-bar.tsx` and other files using `generateAgentStateChangeEvent` function.
+*   **Description:** This action is sent when the user interacts with UI controls to change the agent's state, such as pausing, resuming, or stopping the agent's execution.
+
+#### 3.2.3. Send Message (`"message"`)
+
+*   **Action Type String:** `"message"`
+*   **Backend Action Class:** `MessageAction`
+*   **Example `oh_action` Payload (JSON):**
+    ```json
+    {
+      "action": "message",
+      "args": {
+        "content": "Hello, agent!",
+        "image_urls": [],
+        "timestamp": "2025-01-31T21:00:00.000Z"
+      }
+    }
+    ```
+*   **Source (Frontend):** `/workspace/playground/frontend/src/components/features/chat/chat-interface.tsx` (`createChatMessage` function)
+*   **Description:** This action is sent when the user sends a message in the chat interface. It delivers the user's message content, image URLs (if any), and timestamp to the backend agent.
+
+*   **Action Type String:** `"change_agent_state"`
+*   **Backend Action Class:** `ChangeAgentStateAction`
+*   **Example `oh_action` Payload (JSON):**
+    ```json
+    {
+      "action": "change_agent_state",
+      "args": {
+        "agent_state": "PAUSED"
+      }
+    }
+    ```
+*   **Source (Frontend):** `/workspace/playground/frontend/src/components/features/controls/agent-control-bar.tsx` and other files using `generateAgentStateChangeEvent` function.
+*   **Description:** This action is sent when the user interacts with UI controls to change the agent's state, such as pausing, resuming, or stopping the agent's execution.
+
+The Mac app will need to be able to send similar `oh_action` events to interact with the OpenHands backend.
+
+The Mac app sends actions to the backend server using the `oh_action` event. These actions are triggered by **user interactions within the Mac app**, and in the backend processing, they are associated with `EventSource.USER`. Actions are also sent as dictionaries in JSON format.
+
+**`oh_action` Data Structure:**
+
+```json
+{
+    "action": "action_type_string",  // e.g., "CmdRunAction", "BrowseURLAction", "FileEditAction"
+    "args": {
+        // Action-specific arguments (key-value pairs)
+    },
+    "timeout": (optional) timeout value in seconds (number)
+}
+```
+
+**Example `oh_action` (Run Bash Command):**
+
+To run the command `ls -l /workspace`, send the following `oh_action` message:
+
+```json
+{
+  "action": "CmdRunAction",
+  "args": {
+    "command": "ls -l /workspace"
+  }
+}
+```
+
+**Available Actions:**
+
+Here is a list of available actions that can be sent to the backend via the `oh_action` event, along with their action type strings and arguments:
+
+*   **Agent Actions:** (Defined in `agent.py`)
+    *   `CHANGE_AGENT_STATE` (`"change_agent_state"`):
+        *   `agent_state` (str, required): The new agent state.
+        *   `thought` (str, optional): Agent's thought about the state change.
+    *   `SUMMARIZE` (`"summarize"`):
+        *   `summary` (str, required): The summary text.
+    *   `FINISH` (`"finish"`):
+        *   `outputs` (dict, optional): Agent outputs (e.g., `{"content": "final result"}`).
+        *   `thought` (str, optional): Agent's final thought/explanation.
+    *   `REJECT` (`"reject"`):
+        *   `outputs` (dict, optional): Rejection details (e.g., `{"reason": "cannot fulfill request"}`).
+        *   `thought` (str, optional): Agent's thought about rejection.
+    *   `DELEGATE` (`"delegate"`):
+        *   `agent` (str, required): Name of the agent to delegate to.
+        *   `inputs` (dict, required): Inputs for the delegated agent.
+        *   `thought` (str, optional): Agent's thought about delegation.
+
+*   **Browse Actions:** (Defined in `browse.py`)
+    *   `BROWSE` (`"browse"`):
+        *   `url` (str, required): The URL to browse.
+        *   `thought` (str, optional): Agent's thought about browsing.
+    *   `BROWSE_INTERACTIVE` (`"browse_interactive"`):
+        *   `browser_actions` (str, required): String containing browser actions (Python code).
+        *   `thought` (str, optional): Agent's thought about interactive browsing.
+        *   `browsergym_send_msg_to_user` (str, optional): Internal field (ignore).
+
+*   **Command Actions:** (Defined in `commands.py`)
+    *   `RUN` (`"run"`):
+        *   `command` (str, required): The bash command to run.
+        *   `is_input` (bool, optional, default: `False`): Input to running process.
+        *   `thought` (str, optional): Agent's thought about command.
+        *   `blocking` (bool, optional, default: `False`): Blocking command.
+        *   `hidden` (bool, optional, default: `False`): Hide command output.
+        *   `confirmation_state` (optional): Ignore for basic use.
+        *   `security_risk` (optional): Ignore for basic use.
+    *   `RUN_IPYTHON` (`"run_ipython"`):
+        *   `code` (str, required): Python code to run in IPython.
+        *   `thought` (str, optional): Agent's thought about code.
+        *   `include_extra` (bool, optional, default: `True`): Include extra output info.
+        *   `confirmation_state` (optional): Ignore for basic use.
+        *   `security_risk` (optional): Ignore for basic use.
+        *   `kernel_init_code` (optional): Internal field (ignore).
+
+*   **File Actions:** (Defined in `files.py`)
+    *   `READ` (`"read"`):
+        *   `path` (str, required): Path to file to read.
+        *   `start` (int, optional, default: `0`): Start line (0-indexed).
+        *   `end` (int, optional, default: `-1`): End line (-1 for EOF).
+        *   `thought` (str, optional): Agent's thought about reading.
+        *   `impl_source` (optional): Internal field (ignore).
+        *   `translated_ipython_code` (optional): Internal field (ignore).
+    *   `WRITE` (`"write"`):
+        *   `path` (str, required): Path to file to write.
+        *   `content` (str, required): Content to write.
+        *   `start` (int, optional, default: `0`): Start line (ignore).
+        *   `end` (int, optional, default: `-1`): End line (ignore).
+        *   `thought` (str, optional): Agent's thought about writing.
+    *   `EDIT` (`"edit"`):
+        *   `path` (str, required): Path to file to edit.
+        *   `content` (str, required): Content to edit/replace.
+        *   `start` (int, optional, default: `1`): Start line (1-indexed, inclusive).
+        *   `end` (int, optional, default: `-1`): End line (1-indexed, inclusive, -1 for EOF).
+        *   `thought` (str, optional): Agent's thought about editing.
+        *   `impl_source` (optional): Internal field (ignore).
+        *   `translated_ipython_code` (optional): Internal field (ignore).
+
+*   **Empty Action:** (Defined in `empty.py`)
+    *   `NULL` (`"null"`):
+        *   No arguments. No-operation action.
+
+*   **Message Action:** (Defined in `message.py`)
+    *   `MESSAGE` (`"message"`):
+        *   `content` (str, required): Message content to display.
+        *   `image_urls` (list[str] | None, optional): Image URLs in message.
+        *   `wait_for_response` (bool, optional): Wait for user response (ignore for basic use).
+        *   `security_risk` (optional): Ignore for basic use.
+
+The backend server is already configured to use SocketIO for real-time communication with the web UI.  The SocketIO server is initialized in `openhands/server/shared.py` and event handlers are defined in `openhands/server/listen_socket.py`.
+
+The existing SocketIO setup is configured to allow Cross-Origin Requests from any origin (`cors_allowed_origins='*'`), which will allow the Mac app to connect to the backend server.
+
+The Mac app will need to implement a SocketIO client to connect to the backend server and communicate using the same event names (`oh_action`, `oh_event`, etc.) as the web UI.
+
+---
+
+# Key Takeaways for Mac App Development (Swift/Cocoa)
+
+This approach reuses the existing communication infrastructure and avoids the need to design a new communication protocol.
 
 * **Technology Stack:** Swift/Cocoa is chosen for native Mac app development.
 * **MVP Feature Prioritization:** Confirmed focus on MVP features: Task Input Area, Agent Output Display, Basic File Explorer, Start/Stop Control Buttons, Backend Connection Settings.
