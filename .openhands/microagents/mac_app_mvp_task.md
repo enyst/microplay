@@ -6,7 +6,7 @@ agent  :  CodeActAgent
 
 # OpenHands Mac App MVP Definition
 
-This document defines the MVP features for the OpenHands Mac App.
+This document defines the MVP features for the OpenHands Mac App, which serves as a native macOS alternative to the existing web UI. Both the Mac App and web UI connect to the same OpenHands backend service, with this client providing a native desktop experience while maintaining full compatibility with the backend API.
 
 ## MVP Configuration Defaults
 
