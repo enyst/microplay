@@ -31,3 +31,7 @@ This document contains detailed design specifications for the OpenHands Mac appl
     - Details about Memory Area elements.
   - **Bottom Right Section:**
     - Command Output (Terminal) elements.
+
+- **Status Bar:**
+  - Description: A status bar indicating system status and connection state.
+  - Functionality: Displays backend connection status, error states, and system notifications.
