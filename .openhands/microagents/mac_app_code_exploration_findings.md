@@ -361,6 +361,8 @@ Here is a list of available actions that can be sent to the backend via the `oh_
         *   `outputs` (dict, optional): Agent outputs (e.g., `{"content": "final result"}`).
         *   `thought` (str, optional): Agent's final thought/explanation.
     *   `REJECT` (`"reject"`):
+
+
         *   `outputs` (dict, optional): Rejection details (e.g., `{"reason": "cannot fulfill request"}`).
         *   `thought` (str, optional): Agent's thought about rejection.
     *   `DELEGATE` (`"delegate"`):
@@ -393,6 +395,27 @@ Here is a list of available actions that can be sent to the backend via the `oh_
         *   `confirmation_state` (optional): Ignore for basic use.
         *   `security_risk` (optional): Ignore for basic use.
         *   `kernel_init_code` (optional): Internal field (ignore).
+
+### 3.3. Internal API Naming Convention
+
+For clarity within the Mac app codebase, we'll use more descriptive internal terminology while maintaining compatibility with backend events:
+
+| API Event Name | Internal Term | Description                               |
+|----------------|---------------|-------------------------------------------|
+| `oh_action`    | `userAction`  | User-initiated commands sent to backend   |
+| `oh_event`     | `oh_event`    | All events received from backend          |
+
+Implementation example:
+```swift
+// Public methods with clear naming
+func sendUserAction(type: String, args: [String: Any]) {
+    // Internally mapped to compatible API event
+    socketManager.emit("oh_action", payload)
+}
+```
+
+This maintains API compatibility while providing more intuitive naming in the codebase.
+
 
 *   **File Actions:** (Defined in `files.py`)
     *   `READ` (`"read"`):
