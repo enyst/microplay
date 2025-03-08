@@ -65,3 +65,17 @@ The primary focus of the MVP is to enable the following functionalities:
 - Navigate and view files within the workspace.
 - Start and stop agent execution.
 - Connect to a local OpenHands backend.
+
+## Technical Architecture
+
+### Data Models
+
+The Mac app will implement Swift models that directly map to the JSON structures defined in the backend communication protocol. These include:
+
+- Communication models (Events, UserActions)
+- Agent state model
+- File system representations
+- Configuration models
+
+All models will implement Swift's `Codable` protocol for JSON serialization/deserialization.
+
