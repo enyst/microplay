@@ -38,6 +38,13 @@ For the initial MVP release of the OpenHands Mac application, we will focus on t
    - Description: Basic settings to connect to the OpenHands backend.
    - Functionality: Option to specify the backend host (assume local backend for MVP initially).
 
+## MVP Technical Architecture
+
+- **UI Framework**: SwiftUI
+- **Architecture Pattern**: MVVM (Model-View-ViewModel)
+- **State Management**: Observable state objects with SwiftUI's property wrappers
+- **Communication**: Centralized SocketIO manager class for backend integration
+
 ## Excluded from MVP
 
 The following features will be excluded from the MVP to expedite the initial release:
