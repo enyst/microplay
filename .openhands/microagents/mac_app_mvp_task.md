@@ -6,7 +6,13 @@ agent  :  CodeActAgent
 
 # OpenHands Mac App MVP Definition
 
-This document defines the MVP features for the OpenHands Mac application.
+This document defines the MVP features for the OpenHands Mac App.
+
+## MVP Configuration Defaults
+
+- **Backend Connection**: Local by default (localhost)
+- **Target macOS Version**: Current stable release (no backward compatibility required for MVP)
+- **Architecture Role**: The Mac App functions purely as a frontend client connecting to the existing OpenHands backend, which handles all data persistence, file operations, and business logic.
 
 ## Core MVP Features
 
