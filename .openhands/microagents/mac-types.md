@@ -1,3 +1,12 @@
+---
+ name: mac-types
+ type: knowledge
+ agent: CodeActAgent
+ version: 1.0.0
+ triggers:
+ - mac-types
+ ---
+
 # Types for the Mac Client functionality
 
 This document catalogs the data types needed for implementing the OpenHands Mac client specific functionality.
