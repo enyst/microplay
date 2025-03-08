@@ -68,6 +68,39 @@ The codebase also defines actions for file operations, such as:
 - **READ:** Retrieve file contents from the workspace.
 - **WRITE:** Create or modify file content.
 
+
+## 5. Core Model Categories
+
+The Mac app requires Swift models that correspond to the backend data structures. Based on the API specifications, these models fall into these categories:
+
+### 5.1. Communication Models
+- **Event Models** (`oh_event`)
+  - `AgentEvent`: Base structure for all backend events
+  - `CommandObservation`: Terminal command outputs
+  - `FileObservation`: File operation results
+  - `MessageEvent`: User or agent messages
+
+- **User Action Models** (`oh_action`)
+  - `CommandAction`: Terminal commands (`run`)
+  - `FileAction`: File operations (`read`, `write`)
+  - `AgentControlAction`: State changes (`change_agent_state`)
+  - `MessageAction`: User messages
+
+### 5.2. Agent State Model
+- `AgentState` enum: Represents possible agent execution states (RUNNING, PAUSED, etc.)
+- `AgentStatus`: Current agent status information
+
+### 5.3. File System Models
+- `FileNode`: Representation of workspace files and directories
+- `FileContent`: Content of specific files
+- `FileOperation`: Results of file operations
+
+### 5.4. Settings Models
+- `BackendSettings`: Backend connection configuration
+- `UISettings`: App interface preferences
+
+All models should implement Swift's `Codable` protocol for JSON serialization/deserialization with minimal manual mapping required.
+
 Parameters typically include the file path and optional start/end line numbers.
 
 ## UI and Backend Integration
