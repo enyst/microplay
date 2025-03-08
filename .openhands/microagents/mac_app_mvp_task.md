@@ -65,5 +65,4 @@ The Mac app will implement Swift models that directly map to the JSON structures
 - Configuration models
 
 All models will implement Swift's `Codable` protocol for JSON serialization/deserialization.
-This approach avoids redundancy while clarifying the implementation plan. The existing JSON documentation provides sufficient detail for developers to implement the corresponding Swift structures.
 
