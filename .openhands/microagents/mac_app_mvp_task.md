@@ -36,7 +36,7 @@ For the initial MVP release of the OpenHands Mac application, we will focus on t
 
 5. **Backend Connection Settings:**
    - Description: Basic settings to connect to the OpenHands backend.
-   - Functionality: Option to specify the backend host (assume local backend for MVP initially).
+   - Functionality: Option to specify the backend host and a few settings for connecting to the local server, such as specifying the port. The configuration should be minimal.
 
 ## MVP Technical Architecture
 
