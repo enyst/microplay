@@ -53,3 +53,6 @@ This document outlines specific technical gaps in the current Mac client MVP spe
 - [x] **Event Handling Architecture**:
   - [x] Detailed specification for how events from the backend will be processed and routed to appropriate components
   - [x] Details on event prioritization and queueing
+
+- [ ] **Implementation Verification**:
+  - [ ] implementation_error_handling.md has code about events handling in general, is that correct?

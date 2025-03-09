@@ -1,10 +1,56 @@
-# Agent Output Display Implementation Guide for Mac Client
+# Chat Box Implementation Guide for Mac Client
 
-This document outlines the implementation details for displaying agent outputs in the Mac client, including handling different output types, formatting, styling, and scrolling management.
+This document outlines the implementation details for the chat box in the Mac client, which displays both agent outputs and user messages, including handling different message types, formatting, styling, and scrolling management.
 
-## 1. Agent Output Types and Handling
+## 1. Message Types and Handling
 
-### 1.1 Output Type Definitions
+### 1.1 Message Model
+
+```swift
+enum MessageType {
+    case user
+    case agent
+}
+
+struct ChatMessage: Identifiable {
+    let id: UUID
+    let type: MessageType
+    let content: MessageContent
+    let timestamp: Date
+    let metadata: [String: Any]?
+    
+    // Convenience initializer for user messages
+    static func userMessage(_ text: String) -> ChatMessage {
+        return ChatMessage(
+            id: UUID(),
+            type: .user,
+            content: .userMessage(text),
+            timestamp: Date(),
+            metadata: nil
+        )
+    }
+    
+    // Convenience initializer for agent outputs
+    static func agentOutput(_ outputType: AgentOutputType, metadata: [String: Any]? = nil) -> ChatMessage {
+        return ChatMessage(
+            id: UUID(),
+            type: .agent,
+            content: .agentOutput(outputType),
+            timestamp: Date(),
+            metadata: metadata
+        )
+    }
+}
+
+enum MessageContent {
+    case userMessage(String)
+    case agentOutput(AgentOutputType)
+}
+```
+
+## 2. Agent Output Types and Handling
+
+### 2.1 Output Type Definitions
 
 ```swift
 enum AgentOutputType {
@@ -27,7 +73,7 @@ struct AgentOutput {
 }
 ```
 
-### 1.2 Output Type Detection
+### 2.2 Output Type Detection
 
 ```swift
 class OutputParser {
@@ -141,9 +187,9 @@ class OutputParser {
 }
 ```
 
-## 2. Output Formatting and Styling
+## 3. Output Formatting and Styling
 
-### 2.1 Text and Markdown Rendering
+### 3.1 Text and Markdown Rendering
 
 ```swift
 struct MarkdownOutputView: View {
@@ -159,7 +205,35 @@ struct MarkdownOutputView: View {
 }
 ```
 
-### 2.2 Code Block Rendering
+### 3.2 User Message View
+
+```swift
+struct UserMessageView: View {
+    let message: String
+    
+    var body: some View {
+        HStack {
+            Spacer()
+            
+            Text(message)
+                .padding()
+                .background(Color.blue.opacity(0.1))
+                .foregroundColor(.primary)
+                .cornerRadius(12)
+                .contextMenu {
+                    Button(action: {
+                        UIPasteboard.general.string = message
+                    }) {
+                        Label("Copy", systemImage: "doc.on.doc")
+                    }
+                }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 4)
+    }
+}
+
+### 3.4 Code Block Rendering
 
 ```swift
 struct CodeBlockView: View {
@@ -217,7 +291,7 @@ struct CodeBlockView: View {
 }
 ```
 
-### 2.3 Terminal Output Rendering
+### 3.3 Terminal Output Rendering
 
 ```swift
 struct TerminalOutputView: View {
@@ -239,7 +313,7 @@ struct TerminalOutputView: View {
 }
 ```
 
-### 2.4 Image Rendering
+### 3.4 Image Rendering
 
 ```swift
 struct AgentImageView: View {
@@ -299,7 +373,23 @@ struct AgentImageView: View {
 }
 ```
 
-### 2.5 Output Container View
+### 3.5 User Message Rendering
+
+```swift
+struct UserMessageView: View {
+    let message: String
+    
+    var body: some View {
+        Text(message)
+            .padding()
+            .background(Color.blue.opacity(0.1))
+            .cornerRadius(12)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+}
+```
+
+### 3.6 Output Container View
 
 ```swift
 struct AgentOutputContainerView: View {
@@ -361,9 +451,9 @@ struct AgentOutputContainerView: View {
 }
 ```
 
-## 3. Scrolling and History Management
+## 4. Scrolling and History Management
 
-### 3.1 Conversation History View
+### 4.1 Conversation History View
 
 ```swift
 struct ConversationHistoryView: View {
@@ -371,15 +461,32 @@ struct ConversationHistoryView: View {
     
     // Scroll position tracking
     @State private var scrollProxy: ScrollViewProxy?
-    @State private var lastOutputId: UUID?
+    @State private var lastMessageId: UUID?
     
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 16) {
-                    ForEach(viewModel.outputs) { output in
-                        AgentOutputContainerView(output: output)
-                            .id(output.id)
+                    ForEach(viewModel.messages) { message in
+                        Group {
+                            switch message.type {
+                            case .user:
+                                if case .userMessage(let content) = message.content {
+                                    UserMessageView(message: content)
+                                }
+                            case .agent:
+                                if case .agentOutput(let outputType) = message.content {
+                                    AgentOutputContainerView(output: AgentOutput(
+                                        id: message.id,
+                                        type: outputType,
+                                        timestamp: message.timestamp,
+                                        isComplete: true,
+                                        metadata: message.metadata
+                                    ))
+                                }
+                            }
+                        }
+                        .id(message.id)
                     }
                     
                     // Spacer at the bottom to allow scrolling past the last item
@@ -393,10 +500,10 @@ struct ConversationHistoryView: View {
                 scrollProxy = proxy
                 scrollToBottom(animated: false)
             }
-            .onChange(of: viewModel.outputs) { newOutputs in
-                // If a new output was added, scroll to it
-                if let lastOutput = newOutputs.last, lastOutput.id != lastOutputId {
-                    lastOutputId = lastOutput.id
+            .onChange(of: viewModel.messages) { newMessages in
+                // If a new message was added, scroll to it
+                if let lastMessage = newMessages.last, lastMessage.id != lastMessageId {
+                    lastMessageId = lastMessage.id
                     scrollToBottom()
                 }
             }
@@ -413,11 +520,11 @@ struct ConversationHistoryView: View {
 }
 ```
 
-### 3.2 Lazy Loading for Large Conversations
+### 4.2 Lazy Loading for Large Conversations
 
 ```swift
 class ConversationViewModel: ObservableObject {
-    @Published private(set) var outputs: [AgentOutput] = []
+    @Published private(set) var messages: [ChatMessage] = []
     @Published private(set) var isLoadingHistory = false
     
     private var conversationId: String
@@ -435,7 +542,7 @@ class ConversationViewModel: ObservableObject {
         // Load initial history
         loadInitialHistory()
         
-        // Subscribe to new outputs
+        // Subscribe to new messages
         setupSocketSubscription()
     }
     
@@ -449,10 +556,10 @@ class ConversationViewModel: ObservableObject {
                 self.isLoadingHistory = false
                 
                 switch result {
-                case .success(let outputs):
-                    self.outputs = outputs
+                case .success(let messages):
+                    self.messages = messages
                     self.currentPage = 1
-                    self.hasMoreHistory = outputs.count >= 20 // Assuming page size of 20
+                    self.hasMoreHistory = messages.count >= 20 // Assuming page size of 20
                     
                 case .failure(let error):
                     print("Failed to load history: \(error)")
@@ -460,6 +567,20 @@ class ConversationViewModel: ObservableObject {
                 }
             }
         }
+    }
+    
+    // Send a new user message
+    func sendMessage(_ message: String) {
+        // Create and add user message to the conversation
+        let userMessage = ChatMessage.userMessage(message)
+        messages.append(userMessage)
+        
+        // Send message to backend
+        socketManager.emit("oh_action", [
+            "type": "user_message",
+            "content": message,
+            "conversation_id": conversationId
+        ])
     }
     
     func loadMoreHistory() {
@@ -475,13 +596,13 @@ class ConversationViewModel: ObservableObject {
                 self.isLoadingHistory = false
                 
                 switch result {
-                case .success(let outputs):
-                    if outputs.isEmpty {
+                case .success(let messages):
+                    if messages.isEmpty {
                         self.hasMoreHistory = false
                     } else {
-                        self.outputs.insert(contentsOf: outputs, at: 0)
+                        self.messages.insert(contentsOf: messages, at: 0)
                         self.currentPage = nextPage
-                        self.hasMoreHistory = outputs.count >= 20
+                        self.hasMoreHistory = messages.count >= 20
                     }
                     
                 case .failure(let error):
@@ -492,10 +613,27 @@ class ConversationViewModel: ObservableObject {
         }
     }
     
+    // Send a user message
+    func sendUserMessage(_ text: String) {
+        let userMessage = ChatMessage(
+            id: UUID(),
+            type: .user,
+            content: .userMessage(text),
+            timestamp: Date(),
+            metadata: nil
+        )
+        
+        // Add to local messages
+        messages.append(userMessage)
+        
+        // Send to backend
+        socketManager.sendUserMessage(text)
+    }
+    
     private func setupSocketSubscription() {
         socketManager.connect()
         
-        // Subscribe to new events
+        // Subscribe to new agent outputs
         NotificationCenter.default.addObserver(
             forName: .newAgentOutput,
             object: nil,
@@ -508,18 +646,41 @@ class ConversationViewModel: ObservableObject {
             
             let output = OutputParser.parseOutput(from: event)
             
-            // Update existing output if it's a continuation
-            if let existingIndex = self.outputs.firstIndex(where: { $0.id.uuidString == event.id }) {
-                self.outputs[existingIndex] = output
+            // Create agent message
+            let agentMessage = ChatMessage(
+                id: UUID(),
+                type: .agent,
+                content: .agentOutput(output.type),
+                timestamp: output.timestamp,
+                metadata: output.metadata
+            )
+            
+            // Update existing message if it's a continuation or add new message
+            if let existingIndex = self.findIncompleteAgentMessageIndex() {
+                self.messages[existingIndex] = agentMessage
             } else {
-                self.outputs.append(output)
+                self.messages.append(agentMessage)
             }
         }
+    }
+    
+    // Find the index of the last incomplete agent message
+    private func findIncompleteAgentMessageIndex() -> Int? {
+        for (index, message) in messages.enumerated().reversed() {
+            if message.type == .agent, 
+               case .agentOutput(let outputType) = message.content,
+               let metadata = message.metadata,
+               let isComplete = metadata["isComplete"] as? Bool,
+               !isComplete {
+                return index
+            }
+        }
+        return nil
     }
 }
 ```
 
-### 3.3 Pull to Refresh for History
+### 4.4 Pull to Refresh for History
 
 ```swift
 struct ConversationView: View {
@@ -634,7 +795,49 @@ class StreamingOutputManager {
 }
 ```
 
-### 4.2 Animated Typing Effect
+### 4.2 Message Input View
+
+```swift
+struct MessageInputView: View {
+    @State private var messageText = ""
+    let onSend: (String) -> Void
+    
+    var body: some View {
+        HStack {
+            // Text input field
+            TextField("Type a message...", text: $messageText)
+                .padding(10)
+                .background(Color(.systemGray6))
+                .cornerRadius(20)
+                .submitLabel(.send)
+                .onSubmit {
+                    sendMessage()
+                }
+            
+            // Send button
+            Button(action: sendMessage) {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 30))
+                    .foregroundColor(.blue)
+            }
+            .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(Color(.systemBackground))
+        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: -5)
+    }
+    
+    private func sendMessage() {
+        let trimmedMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedMessage.isEmpty else { return }
+        
+        onSend(trimmedMessage)
+        messageText = ""
+    }
+}
+
+### 4.3 Animated Typing Effect
 
 ```swift
 struct TypingTextView: View {
