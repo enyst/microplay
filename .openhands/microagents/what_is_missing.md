@@ -15,10 +15,10 @@ This document outlines specific technical gaps in the current Mac client MVP spe
   - [ ] View hierarchy and navigation flow
   - [ ] Specification for how the MVVM pattern should be implemented for each feature
 
-- [ ] **File Explorer Implementation**:
-  - [ ] Details on how file system data will be fetched and cached
-  - [ ] Specification for file content display (syntax highlighting, encoding handling)
-  - [ ] Pagination or lazy loading strategy for large directories
+- [x] **File Explorer Implementation**:
+  - [x] Details on how file system data will be fetched and cached
+  - [x] Specification for file content display (syntax highlighting, encoding handling)
+  - [x] Pagination or lazy loading strategy for large directories
 
 - [ ] **Agent Output Display Implementation**:
   - [ ] Specification for how to handle different types of agent outputs (text, code, images)
