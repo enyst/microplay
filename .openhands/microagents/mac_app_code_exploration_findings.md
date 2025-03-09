@@ -351,10 +351,10 @@ To run the command `ls -l /workspace`, send the following `oh_action` message:
 
 For clarity within the Mac app codebase, we'll use more descriptive internal terminology while maintaining compatibility with backend events:
 
-| API Event Name | Internal Term | Description                               |
-|----------------|---------------|-------------------------------------------|
-| `oh_action`    | `userAction`  | User-initiated commands sent to backend   |
-| `oh_event`     | `oh_event`    | All events received from backend          |
+| API Event Name | Internal Term    | Description                               |
+|----------------|------------------|-------------------------------------------|
+| `oh_action`    | `userAction`     | User-initiated commands sent to backend   |
+| `oh_event`     | `oh_event`       | All events received from backend          |
 
 Implementation example:
 ```swift
