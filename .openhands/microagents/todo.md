@@ -20,7 +20,7 @@ This document outlines specific technical gaps in the current Mac client MVP spe
   - [x] Specification for file content display (syntax highlighting, encoding handling)
   - [x] Pagination or lazy loading strategy for large directories
 
-- [x] **Agent Output Display Implementation**:
+- [x] **Agent Output Display Implementation**: (implemented in impl_chat_box.md)
   - [x] Specification for how to handle different types of agent outputs (text, code, images)
   - [x] Details on output formatting and styling
   - [x] Scrolling or history management specification
@@ -55,4 +55,5 @@ This document outlines specific technical gaps in the current Mac client MVP spe
   - [x] Details on event prioritization and queueing
 
 - [ ] **Implementation Verification**:
-  - [ ] implementation_error_handling.md has code about events handling in general, is that correct?
+  - [ ] impl_error_handling.md has code about events handling in general, is that correct?
+  - [ ] Agent Output Display is implemented in impl_chat_box.md rather than a separate file
