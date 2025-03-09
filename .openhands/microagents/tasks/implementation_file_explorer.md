@@ -1,42 +1,18 @@
 ---
-name: mac_client_implementation_guide
-type: knowledge
+name: implementation_file_explorer
+type: task
 agent: CodeActAgent
 version: 1.0.0
 triggers:
-- implementation
+- file explorer
+- file browser
 ---
 
-# OpenHands Mac Client Implementation Guide
-
-This document provides detailed technical guidance for implementing the OpenHands Mac client. It breaks down each feature into specific technical components, providing actionable details for developers to implement without unnecessary design decisions.
-
-## Table of Contents
-
-1. [Socket.IO Implementation](#1-socketio-implementation)
-2. [UI Component Architecture](#2-ui-component-architecture)
-3. [File Explorer Implementation](#3-file-explorer-implementation)
-4. [Agent Output Display Implementation](#4-agent-output-display-implementation)
-5. [Backend Connection Management](#5-backend-connection-management)
-6. [State Synchronization](#6-state-synchronization)
-7. [Error States and Recovery](#7-error-states-and-recovery)
-8. [Performance Considerations](#8-performance-considerations)
-9. [Swift Implementation Details](#9-swift-implementation-details)
-10. [Event Handling Architecture](#10-event-handling-architecture)
-
-## 1. Socket.IO Implementation
-
-*Detailed implementation guidance for Socket.IO will be added here.*
-
-## 2. UI Component Architecture
-
-*Detailed implementation guidance for UI Component Architecture will be added here.*
-
-## 3. File Explorer Implementation
+# File Explorer Implementation
 
 The File Explorer provides a read-only view of the workspace file system, allowing users to navigate directories and view file contents. All file operations are performed through the backend API.
 
-### 3.1. Data Models
+## 1. Data Models
 
 ```swift
 // Model representing a file or directory in the workspace
@@ -64,7 +40,7 @@ struct FileContent: Codable {
 }
 ```
 
-### 3.2. API Client Methods
+## 2. API Client Methods
 
 ```swift
 protocol FileExplorerService {
@@ -117,7 +93,7 @@ class FileExplorerServiceImpl: FileExplorerService {
 }
 ```
 
-### 3.3. View Models
+## 3. View Models
 
 ```swift
 class FileExplorerViewModel: ObservableObject {
@@ -267,7 +243,7 @@ class FileExplorerViewModel: ObservableObject {
 }
 ```
 
-### 3.4. UI Components
+## 4. UI Components
 
 ```swift
 struct FileExplorerView: View {
@@ -393,7 +369,7 @@ struct FileContentView: View {
 }
 ```
 
-### 3.5. Integration with Backend
+## 5. Integration with Backend
 
 The File Explorer integrates with the backend through:
 
@@ -423,7 +399,7 @@ func setupFileChangeListeners() {
 }
 ```
 
-### 3.6. Caching and Performance
+## 6. Caching and Performance
 
 To optimize performance, the File Explorer implementation includes:
 
@@ -446,31 +422,3 @@ func loadDirectoryPage(path: String, page: Int, pageSize: Int) async throws -> [
     )
 }
 ```
-
-## 4. Agent Output Display Implementation
-
-*Detailed implementation guidance for Agent Output Display will be added here.*
-
-## 5. Backend Connection Management
-
-*Detailed implementation guidance for Backend Connection Management will be added here.*
-
-## 6. State Synchronization
-
-*Detailed implementation guidance for State Synchronization will be added here.*
-
-## 7. Error States and Recovery
-
-*Detailed implementation guidance for Error States and Recovery will be added here.*
-
-## 8. Performance Considerations
-
-*Detailed implementation guidance for Performance Considerations will be added here.*
-
-## 9. Swift Implementation Details
-
-*Detailed implementation guidance for Swift Implementation Details will be added here.*
-
-## 10. Event Handling Architecture
-
-*Detailed implementation guidance for Event Handling Architecture will be added here.*
