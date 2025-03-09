@@ -16,7 +16,7 @@ This document defines the MVP features for the OpenHands Mac Client, which serve
 
 ## Core MVP Features
 
-For the initial MVP release of the OpenHands Mac clientlication, we will focus on the following core features:
+For the initial MVP release of the OpenHands Mac client application, we will focus on the following core features:
 
 1. **Task Input Area:**
    - Description: A text area for users to input tasks.

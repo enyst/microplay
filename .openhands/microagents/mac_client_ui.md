@@ -6,7 +6,7 @@ agent  :  CodeActAgent
 
 # OpenHands Mac Client UI Design Details
 
-This document contains detailed design specifications for the OpenHands Mac clientlication UI.
+This document contains detailed design specifications for the OpenHands Mac client application UI.
 
 ## UI Views and Elements Outline
 
