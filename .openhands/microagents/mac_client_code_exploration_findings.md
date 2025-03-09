@@ -1,5 +1,5 @@
 ---
-name:  mac_app_code_exploration_findings
+name:  mac_client_code_exploration_findings
 type:  knowledge
 agent:  CodeActAgent
 version: 1.0.1
@@ -7,9 +7,9 @@ triggers:
 - exploration
 ---
 
-# OpenHands Mac App Code Exploration Findings
+# OpenHands Mac Client Code Exploration Findings
 
-This document provides detailed findings from an exploration of the codebase relevant to the Mac Application. It serves as a technical reference that outlines the functions, event structures, and system integrations discovered during the investigation.
+This document provides detailed findings from an exploration of the codebase relevant to the Mac client application. It serves as a technical reference that outlines the functions, event structures, and system integrations discovered during the investigation.
 
 ## Overview
 
@@ -88,7 +88,7 @@ The UI components communicate with backend services using SocketIO. Key integrat
 
 ## 1. Frontend Code Findings (React)
 
-The web frontend is built using React and provides valuable UI components and logic that can be used as a reference for the Mac app development.
+The web frontend is built using React and provides valuable UI components and logic that can be used as a reference for the Mac client development.
 
 ### 1.1. UI Components (frontend/src/components/features/)
 
@@ -187,15 +187,15 @@ The backend is built using FastAPI and provides REST API endpoints and a SocketI
 
 ## 3.  Backend Communication
 
-The Mac app UI will communicate with the Python backend using **SocketIO**.
+The Mac client UI will communicate with the Python backend using **SocketIO**.
 
 ### 3.1. SocketIO Interface
 
-The Mac app will interact with the backend server using SocketIO events. The key events are `oh_event` (for receiving events from the backend) and `oh_action` (for sending actions to the backend).
+The Mac client will interact with the backend server using SocketIO events. The key events are `oh_event` (for receiving events from the backend) and `oh_action` (for sending actions to the backend).
 
 #### 3.1.1. Receiving Events (`oh_event`)
 
-The backend server sends events to the Mac app using the `oh_event` event. Events are serialized as dictionaries in JSON format.
+The backend server sends events to the Mac client using the `oh_event` event. Events are serialized as dictionaries in JSON format.
 
 **`oh_event` Data Structure:**
 
@@ -318,9 +318,9 @@ Here are some examples of `oh_action` subtypes that are currently sent by the we
 *   **Source (Frontend):** `/workspace/playground/frontend/src/components/features/controls/agent-control-bar.tsx` and other files using `generateAgentStateChangeEvent` function.
 *   **Description:** This action is sent when the user interacts with UI controls to change the agent's state, such as pausing, resuming, or stopping the agent's execution.
 
-The Mac app will need to be able to send similar `oh_action` events to interact with the OpenHands backend.
+The Mac client will need to be able to send similar `oh_action` events to interact with the OpenHands backend.
 
-The Mac app sends actions to the backend server using the `oh_action` event. These actions are triggered by **user interactions within the Mac app**, and in the backend processing, they are associated with `EventSource.USER`. Actions are also sent as dictionaries in JSON format.
+The Mac client sends actions to the backend server using the `oh_action` event. These actions are triggered by **user interactions within the Mac client**, and in the backend processing, they are associated with `EventSource.USER`. Actions are also sent as dictionaries in JSON format.
 
 **`oh_action` Data Structure:**
 
@@ -349,20 +349,20 @@ To run the command `ls -l /workspace`, send the following `oh_action` message:
 
 ### 3.3. Internal API Naming Convention
 
-For clarity within the Mac app codebase, we'll use more descriptive internal terminology while maintaining compatibility with backend events:
+For clarity within the Mac client codebase, we'll use more descriptive internal terminology while maintaining compatibility with backend events:
 
-| API Event Name | Internal Term | Description                               |
-|----------------|---------------|-------------------------------------------|
-| `oh_action`    | `userAction`  | User-initiated commands sent to backend   |
-| `oh_event`     | `oh_event`    | All events received from backend          |
+| API Event Name | Internal Term    | Description                               |
+|----------------|------------------|-------------------------------------------|
+| `oh_action`    | `userAction`     | User-initiated commands sent to backend   |
+| `oh_event`     | `oh_event`       | All events received from backend          |
 
 Implementation example:
 ```swift
 // Public methods with clear naming
-func sendUserAction(type: String, args: [String: Any]) {
-    // Internally mapped to compatible API event
-    socketManager.emit("oh_action", payload)
-}
+func sendUserAction(type: String, args: [String: Any])
+
+// Internally mapped to compatible API event
+socketManager.emit("oh_action", payload)
 ```
 
 This maintains API compatibility while providing more intuitive naming in the codebase.
@@ -453,15 +453,15 @@ Here is a list of available actions that can be sent to the backend via the `oh_
 
 The backend server is already configured to use SocketIO for real-time communication with the web UI.  The SocketIO server is initialized in `openhands/server/shared.py` and event handlers are defined in `openhands/server/listen_socket.py`.
 
-The existing SocketIO setup is configured to allow Cross-Origin Requests from any origin (`cors_allowed_origins='*'`), which will allow the Mac app to connect to the backend server.
+The existing SocketIO setup is configured to allow Cross-Origin Requests from any origin (`cors_allowed_origins='*'`), which will allow the Mac client to connect to the backend server.
 
-The Mac app will need to implement a SocketIO client to connect to the backend server and communicate using the same event names (`oh_action`, `oh_event`, etc.) as the web UI.
+The Mac client will need to implement a SocketIO client to connect to the backend server and communicate using the same event names (`oh_action`, `oh_event`, etc.) as the web UI.
 
 ---
 
 ## 4. Data Models
 
-The Mac app requires Swift models that correspond to the backend data structures. Based on the API specifications, these models fall into these categories:
+The Mac client requires Swift models that correspond to the backend data structures. Based on the API specifications, these models fall into these categories:
 
 ### 5.1. Communication Models
 - **Event Models** (`oh_event`)
@@ -493,13 +493,13 @@ All models should implement Swift's `Codable` protocol for JSON serialization/de
 
 ---
 
-# Key Takeaways for Mac App Development (Swift/Cocoa)
+# Key Takeaways for Mac Client Development (Swift/Cocoa)
 
 This approach reuses the existing communication infrastructure and avoids the need to design a new communication protocol.
 
-* **Technology Stack:** Swift/Cocoa is chosen for native Mac app development.
+* **Technology Stack:** Swift/Cocoa is chosen for native Mac client development.
 * **MVP Feature Prioritization:** Confirmed focus on MVP features: Task Input Area, Agent Output Display, Basic File Explorer, Start/Stop Control Buttons, Backend Connection Settings.
-* **Backend Communication:** Mac app needs to implement:
+* **Backend Communication:** Mac client needs to implement:
     * **SocketIO Client:** To connect to backend, send `oh_action` events, and receive `oh_event` events. Use `WsClientProvider` and `useWsClient` in frontend code as reference.
     * **REST API Client:** To call backend REST API endpoints for file management, settings, and conversation creation. Use `OpenHands` API client in frontend code as reference.
 * **UI Components:** Consider adapting or reimplementing relevant React components in Swift/Cocoa:
@@ -508,12 +508,12 @@ This approach reuses the existing communication infrastructure and avoids the ne
     * File explorer (similar to `FileExplorer`, `ExplorerTree`, `TreeNode`, using file management APIs).
     * Control buttons (Start/Stop/Pause/Resume, similar to `ActionButton`).
     * Settings panel (similar to `SettingsModal` / `SettingsForm`, using settings APIs).
-    * **State Management:** Implement state management in the Mac app, potentially inspired by Redux or React Context patterns used in the frontend. Consider managing agent state, conversation state, file explorer state, and settings state.
+    * **State Management:** Implement state management in the Mac client, potentially inspired by Redux or React Context patterns used in the frontend. Consider managing agent state, conversation state, file explorer state, and settings state.
     * **Authentication (if needed for Saas mode):** Implement JWT cookie-based authentication similar to the backend and web frontend if targeting Saas mode. For OSS mode, authentication might be skipped.
-    * **Configuration:** Allow users to configure backend connection settings (host, TLS) in the Mac app's settings panel, similar to `VITE_BACKEND_HOST` and `VITE_USE_TLS` environment variables in the frontend.
+    * **Configuration:** Allow users to configure backend connection settings (host, TLS) in the Mac client's settings panel, similar to `VITE_BACKEND_HOST` and `VITE_USE_TLS` environment variables in the frontend.
     * **Conversation Management:** Implement conversation creation using the `POST /api/conversations` endpoint.
     121 
-    122 This documentation provides a technical foundation for starting the Swift/Cocoa Mac app development, focusing on precise details and actionable information derived from the existing codebase.
+    122 This documentation provides a technical foundation for starting the Swift/Cocoa Mac client development, focusing on precise details and actionable information derived from the existing codebase.
     123 
     124 ## 4. Glossary of Technical Details
     125 
