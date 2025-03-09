@@ -9,7 +9,7 @@ triggers:
 
 # OpenHands Mac Client Code Exploration Findings
 
-This document provides detailed findings from an exploration of the codebase relevant to the Mac Clientlication. It serves as a technical reference that outlines the functions, event structures, and system integrations discovered during the investigation.
+This document provides detailed findings from an exploration of the codebase relevant to the Mac client application. It serves as a technical reference that outlines the functions, event structures, and system integrations discovered during the investigation.
 
 ## Overview
 
@@ -351,18 +351,18 @@ To run the command `ls -l /workspace`, send the following `oh_action` message:
 
 For clarity within the Mac client codebase, we'll use more descriptive internal terminology while maintaining compatibility with backend events:
 
-| API Event Name | Internal Term | Description                               |
-|----------------|---------------|-------------------------------------------|
-| `oh_action`    | `userAction`  | User-initiated commands sent to backend   |
-| `oh_event`     | `oh_event`    | All events received from backend          |
+| API Event Name | Internal Term    | Description                               |
+|----------------|------------------|-------------------------------------------|
+| `oh_action`    | `userAction`     | User-initiated commands sent to backend   |
+| `oh_event`     | `oh_event`       | All events received from backend          |
 
 Implementation example:
 ```swift
 // Public methods with clear naming
-func sendUserAction(type: String, args: [String: Any]) {
-    // Internally mapped to compatible API event
-    socketManager.emit("oh_action", payload)
-}
+func sendUserAction(type: String, args: [String: Any])
+
+// Internally mapped to compatible API event
+socketManager.emit("oh_action", payload)
 ```
 
 This maintains API compatibility while providing more intuitive naming in the codebase.
