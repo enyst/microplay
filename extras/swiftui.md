@@ -22,7 +22,7 @@ Model → ViewModel → View
    - Contains minimal logic (primarily UI-related)
    - Automatically updates when ViewModel's `@Published` properties change
 
-### Implementation in OpenHands Mac App
+### Implementation in OpenHands Mac Client
 
 For the Agent Output component:
 ```swift
