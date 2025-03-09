@@ -1,12 +1,12 @@
 ---
-name  :  mac_app_ui_design_details
+name  :  mac_client_ui_design_details
 type  :  task
 agent  :  CodeActAgent
 ---
 
-# OpenHands Mac App UI Design Details
+# OpenHands Mac Client UI Design Details
 
-This document contains detailed design specifications for the OpenHands Mac application UI.
+This document contains detailed design specifications for the OpenHands Mac clientlication UI.
 
 ## UI Views and Elements Outline
 

@@ -1,22 +1,22 @@
 ---
-name  :  mac_app_mvp
+name  :  mac_client_mvp
 type  :  task
 agent  :  CodeActAgent
 ---
 
-# OpenHands Mac App MVP Definition
+# OpenHands Mac Client MVP Definition
 
-This document defines the MVP features for the OpenHands Mac App, which serves as a native macOS alternative to the existing web UI. Both the Mac App and web UI connect to the same OpenHands backend service, with this client providing a native desktop experience while maintaining full compatibility with the backend API.
+This document defines the MVP features for the OpenHands Mac Client, which serves as a native macOS alternative to the existing web UI. Both the Mac Client and web UI connect to the same OpenHands backend service, with this client providing a native desktop experience while maintaining full compatibility with the backend API.
 
 ## MVP Configuration Defaults
 
 - **Backend Connection**: Local by default (localhost)
 - **Target macOS Version**: Current stable release (no backward compatibility required for MVP)
-- **Architecture Role**: The Mac App functions purely as a frontend client connecting to the existing OpenHands backend, which handles all data persistence, file operations, and business logic.
+- **Architecture Role**: The Mac Client functions purely as a frontend client connecting to the existing OpenHands backend, which handles all data persistence, file operations, and business logic.
 
 ## Core MVP Features
 
-For the initial MVP release of the OpenHands Mac application, we will focus on the following core features:
+For the initial MVP release of the OpenHands Mac clientlication, we will focus on the following core features:
 
 1. **Task Input Area:**
    - Description: A text area for users to input tasks.
@@ -70,7 +70,7 @@ The primary focus of the MVP is to enable the following functionalities:
 
 ### Data Models
 
-The Mac app will implement Swift models that directly map to the JSON structures defined in the backend communication protocol. These include:
+The Mac client will implement Swift models that directly map to the JSON structures defined in the backend communication protocol. These include:
 
 - Communication models (Events, UserActions)
 - Agent state model

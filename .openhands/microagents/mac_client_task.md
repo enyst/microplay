@@ -1,14 +1,14 @@
 ---
-name  :  mac_app_task
+name  :  mac_client_task
 type  :  task
 agent  :  CodeActAgent
 ---
 
-# OpenHands Mac App
+# OpenHands Mac Client
 
 ## 1. Core App Features
 
-The Mac app will include the following core features:
+The Mac client will include the following core features:
 
 1.  **Task Input Area:**
     *   Description: A text area where users can input instructions and tasks for OpenHands.
@@ -23,7 +23,7 @@ The Mac app will include the following core features:
     *   Functionality: File system navigation, file opening, basic file management (create, delete, rename - optional for initial version).
 
 4.  **Settings Panel:**
-    *   Description: A panel to configure various settings for the Mac app and the OpenHands backend.
+    *   Description: A panel to configure various settings for the Mac client and the OpenHands backend.
     *   Functionality:
         *   Backend Connection: Options to connect to a local or remote OpenHands backend.
         *   API Keys: Input fields for necessary API keys (e.g., for LLMs).

@@ -1,6 +1,6 @@
-# Missing Elements in Mac App MVP Specification
+# Missing Elements in Mac Client MVP Specification
 
-This document outlines specific technical gaps in the current Mac app MVP specification that need to be addressed for a complete implementation guide.
+This document outlines specific technical gaps in the current Mac client MVP specification that need to be addressed for a complete implementation guide.
 
 ## Technical Implementation Details
 
