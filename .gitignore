@@ -4,6 +4,11 @@
 
 ## User settings
 xcuserdata/
+DerivedData/
+
+## macOS
+.DS_Store
+.netrc
 
 ## Obj-C/Swift specific
 *.hmap
@@ -20,16 +25,18 @@ playground.xcworkspace
 # Swift Package Manager
 #
 # Add this line if you want to avoid checking in source code from Swift Package Manager dependencies.
-# Packages/
-# Package.pins
-# Package.resolved
+/Packages
+Package.pins
+Package.resolved
 # *.xcodeproj
 #
 # Xcode automatically generates this directory with a .xcworkspacedata file and xcuserdata
 # hence it is not needed unless you have added a package configuration file to your project
-# .swiftpm
+.swiftpm/configuration/registries.json
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 
 .build/
+/.build
 
 # CocoaPods
 #
