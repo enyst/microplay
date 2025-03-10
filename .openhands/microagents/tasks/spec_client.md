@@ -44,16 +44,94 @@ The Mac client will include the following core features:
         *   Confirmation for potentially destructive actions
         *   Keyboard shortcuts (optional for MVP)
 
-5.  **Settings Panel:**
-    *   Description: A panel to configure various settings for the Mac client and the OpenHands backend.
+5.  **Conversation Management:**
+    *   Description: Interface to create, switch between, and manage multiple conversations.
     *   Functionality:
-        *   Backend Connection: Options to connect to a local or remote OpenHands backend.
-        *   API Keys: Input fields for necessary API keys (e.g., for LLMs).
-        *   Other settings as needed (e.g., theme, font size).
+        *   Create new conversations with different agent types
+        *   Switch between existing conversations via tabs or sidebar
+        *   Rename conversations for better organization
+        *   Delete conversations with confirmation dialog
+        *   View and search conversation history
+        *   Export conversation logs for sharing or archiving
+        *   Group conversations by project or topic
+        *   Filter conversations by status, date, or agent type
+        *   Pin important conversations for quick access
     *   Implementation Requirements:
+        *   Intuitive UI for conversation switching (tabs or sidebar)
+        *   Visual indicators for conversation status (active, paused, completed)
+        *   Confirmation dialogs for destructive actions
+        *   Search functionality within conversation history
+        *   Keyboard shortcuts for quick conversation switching
+        *   Persistent storage of conversation list and metadata
+        *   Ability to restore previous conversation state
+        *   Conversation tagging and categorization
+        *   Bulk operations for managing multiple conversations
+        *   Conversation statistics and usage metrics
+
+6.  **Settings Panel:**
+    *   Description: A comprehensive tabbed panel to configure all settings for the Mac client and the OpenHands backend, matching all options in backend config.template.toml.
+    *   Functionality:
+        *   General Settings:
+            *   UI theme (light/dark/system)
+            *   Font size and family
+            *   Display preferences
+            *   Keyboard shortcuts
+            *   Notification preferences
+            *   Startup behavior
+        *   Backend Connection:
+            *   Local or remote backend URL
+            *   Authentication settings
+            *   Connection timeout and retry settings
+            *   Proxy configuration
+            *   WebSocket parameters
+            *   Health check settings
+        *   Model Settings:
+            *   LLM provider selection
+            *   Model selection (GPT-4, Claude, etc.)
+            *   Context length configuration
+            *   Temperature and other sampling parameters
+            *   System prompt customization
+            *   Model fallback options
+            *   Caching parameters
+        *   API Keys:
+            *   Secure storage for provider API keys
+            *   Key validation and status indicators
+            *   Usage tracking and quotas
+            *   Rotation policies
+            *   Environment variable integration
+        *   Execution Settings:
+            *   Timeout configurations
+            *   Rate limiting settings
+            *   Parallel execution options
+            *   Error handling preferences
+            *   Tool execution parameters
+            *   Memory management
+        *   File System:
+            *   Default workspace location
+            *   File browser preferences
+            *   File type associations
+            *   Ignored files and patterns
+            *   File watching settings
+            *   Version control integration
+        *   Advanced:
+            *   Logging level and location
+            *   Debug options
+            *   Performance tuning
+            *   Experimental features
+            *   Developer tools
+            *   Diagnostic information
+    *   Implementation Requirements:
+        *   Tabbed interface with logical grouping of settings
+        *   Search functionality to quickly find specific settings
+        *   Import/export functionality for settings backup
+        *   Real-time validation of setting values
+        *   Clear documentation for each setting with tooltips
         *   Persistent storage of settings
-        *   Validation of connection settings
         *   Secure storage of sensitive information
+        *   Default value indicators
+        *   Reset to defaults option
+        *   Settings change history
+        *   Profile-based settings management
 
 ## 2. Backend Integration
 
@@ -238,19 +316,24 @@ The Mac client will include the following core features:
 2.  Agent output display with formatting
 3.  Read-only file explorer
 4.  Start/stop agent controls
-5.  Backend connection settings
+5.  Comprehensive settings panel with tabbed interface matching all backend config.template.toml options
 6.  Basic error handling and recovery
-7.  Conversation creation and management
+7.  Multiple conversation management with search and filtering
+8.  Backend connection configuration
+9.  Conversation history and state persistence
 
 ### 8.2 Nice-to-Have Features (Post-MVP)
 
 1.  Image attachment in task input
 2.  File editing capabilities
 3.  Advanced output formatting
-4.  Keyboard shortcuts
+4.  Advanced keyboard shortcuts
 5.  Offline support
-6.  Multiple conversation tabs
-7.  Advanced settings and customization
+6.  Settings import/export
+7.  Advanced customization options
+8.  Conversation grouping and tagging
+9.  Conversation export functionality
+10. Settings profiles management
 
 ## 9. Implementation Approach
 

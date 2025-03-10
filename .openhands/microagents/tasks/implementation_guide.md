@@ -12,7 +12,8 @@ The OpenHands Mac client is a native macOS application built with SwiftUI that p
 2. **Agent Output Display**: Real-time display of agent actions and outputs
 3. **File Explorer**: Browse and view files in the workspace
 4. **Control Buttons**: Start, pause, and stop agent execution
-5. **Settings Panel**: Configure backend connection and preferences
+5. **Conversation Management**: Create, switch between, and manage multiple conversations
+6. **Comprehensive Settings Panel**: Tabbed interface for all client and backend settings
 
 ### 1.2 Architecture
 
@@ -70,10 +71,22 @@ The Mac client follows the MVVM (Model-View-ViewModel) architecture pattern:
 
 ### 2.3 Phase 3: Integration and Polish
 
-1. **Settings Panel**
-   - Implement settings UI with form controls
-   - Connect to settings storage and validation
-   - Implement backend connection configuration
+1. **Comprehensive Settings Panel**
+   - Implement tabbed settings UI matching all backend config.template.toml options
+   - Create separate tabs for different setting categories:
+     * **General**: Application preferences, UI settings, theme options
+     * **Backend**: Connection URL, authentication, proxy settings
+     * **Model**: LLM selection, parameters, context window settings
+     * **API Keys**: Secure storage for OpenAI, Anthropic, and other API keys
+     * **Execution**: Runtime settings, timeout values, execution preferences
+     * **File System**: Workspace paths, file handling preferences
+     * **Advanced**: Debug options, experimental features, logging settings
+   - Implement validation and persistence for all settings
+   - Support backend connection configuration and authentication
+   - Add search functionality for quickly finding specific settings
+   - Implement secure storage for sensitive information (API keys)
+   - Add import/export functionality for settings backup
+   - Include inline documentation and tooltips for each setting
 
 2. **Error Handling**
    - Implement error notification system
@@ -113,6 +126,22 @@ The Mac client communicates with the backend through two primary channels:
    - Manage settings
    - Handle authentication (if needed)
 
+### 3.1.1 Component-Specific Implementation Details
+
+For detailed implementation guidance on specific components, refer to the dedicated implementation files:
+
+1. **File Explorer**: See [impl_file_explorer.md](impl_file_explorer.md) for comprehensive implementation details of the file tree view, file content display, and backend integration.
+
+2. **Socket.IO Communication**: See [impl_socket_io.md](impl_socket_io.md) for details on real-time communication with the backend.
+
+3. **Backend Connection**: See [impl_backend_connection.md](impl_backend_connection.md) for implementation of the connection management.
+
+4. **State Synchronization**: See [impl_state_sync.md](impl_state_sync.md) for details on maintaining consistent state.
+
+5. **Error Handling**: See [impl_error_handling.md](impl_error_handling.md) for comprehensive error management.
+
+Each component-specific implementation file contains detailed code examples, architecture decisions, and integration guidance.
+
 ### 3.2 Data Flow
 
 The data flow in the application follows this pattern:
@@ -151,8 +180,8 @@ The error handling strategy includes:
 - **SocketIOManager**: Manages Socket.IO connection and events
 - **APIClient**: Handles REST API requests
 - **FileService**: Manages file operations
-- **ConversationService**: Manages conversations
-- **SettingsService**: Manages application settings
+- **ConversationService**: Manages multiple conversations, history, and metadata
+- **SettingsService**: Manages comprehensive application settings with tabbed interface
 - **ErrorManager**: Handles error reporting and recovery
 
 ### 4.2 ViewModels
@@ -162,7 +191,8 @@ The error handling strategy includes:
 - **AgentOutputViewModel**: Manages agent output display
 - **TaskInputViewModel**: Manages task input area
 - **AgentControlViewModel**: Manages agent control buttons
-- **SettingsViewModel**: Manages settings panel
+- **ConversationViewModel**: Manages multiple conversations and switching
+- **SettingsViewModel**: Manages comprehensive tabbed settings panel
 
 ### 4.3 Views
 
@@ -171,15 +201,19 @@ The error handling strategy includes:
 - **AgentOutputView**: Agent output display
 - **TaskInputView**: Task input area
 - **AgentControlButtons**: Control buttons
-- **SettingsView**: Settings panel
+- **ConversationListView**: Multiple conversation management interface
+- **ConversationTabView**: Tabbed interface for switching conversations
+- **SettingsView**: Comprehensive tabbed settings panel
 - **ErrorNotificationView**: Error notifications
 
 ### 4.4 Models
 
-- **ConversationInfo**: Conversation metadata
+- **ConversationInfo**: Conversation metadata and status
+- **ConversationGroup**: Group of related conversations
 - **FileNode**: File or directory in workspace
 - **AgentOutput**: Agent output message
-- **Settings**: Application settings
+- **Settings**: Comprehensive application settings
+- **SettingsCategory**: Category of related settings
 - **AppError**: Error information
 
 ## 5. Implementation Approach
@@ -215,7 +249,10 @@ The error handling strategy includes:
 2. **Agent Output Display**: Display agent outputs with basic formatting
 3. **Read-Only File Explorer**: Browse and view files
 4. **Basic Control Buttons**: Start, pause, stop agent
-5. **Backend Connection Settings**: Configure backend connection
+5. **Comprehensive Settings Panel**: Tabbed interface matching all backend config.template.toml options
+6. **Backend Connection Settings**: Configure backend connection
+7. **Multiple Conversation Management**: Create, switch between, and manage multiple conversations
+8. **Conversation History**: View and search conversation history
 
 ### 6.2 Nice-to-Have Features (Post-MVP)
 
@@ -223,8 +260,11 @@ The error handling strategy includes:
 2. **Advanced Output Formatting**: Better syntax highlighting and rendering
 3. **File Editing**: Edit files directly in the client
 4. **Command History**: Browse and reuse previous commands
-5. **Multiple Conversations**: Switch between conversations
-6. **Offline Support**: Queue actions when offline
+5. **Offline Support**: Queue actions when offline
+6. **Advanced Keyboard Shortcuts**: Comprehensive keyboard navigation and shortcuts
+7. **Settings Import/Export**: Export and import settings configurations
+8. **Conversation Grouping**: Group conversations by project or topic
+9. **Conversation Export**: Export conversation logs for sharing
 
 ## 7. Resources and References
 

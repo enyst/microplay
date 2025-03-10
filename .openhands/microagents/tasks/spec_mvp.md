@@ -34,9 +34,17 @@ For the initial MVP release of the OpenHands Mac client application, we will foc
    - Description: Buttons to control agent execution.
    - Functionality: Start the agent and stop it when needed.
 
-5. **Backend Connection Settings:**
-   - Description: Basic settings to connect to the OpenHands backend.
-   - Functionality: Option to specify the backend host and a few settings for connecting to the local server, such as specifying the port. The configuration should be minimal.
+5. **Comprehensive Settings Panel:**
+   - Description: Tabbed interface for configuring all client and backend settings.
+   - Functionality: Complete settings management matching all backend config.template.toml options, organized in logical tabs.
+
+6. **Backend Connection Settings:**
+   - Description: Settings to connect to the OpenHands backend.
+   - Functionality: Options to specify the backend host, port, authentication, and connection parameters.
+
+7. **Multiple Conversation Management:**
+   - Description: Interface to create, switch between, and manage multiple conversations.
+   - Functionality: Create new conversations, switch between existing ones, view conversation history.
 
 ## MVP Technical Architecture
 
@@ -50,11 +58,13 @@ For the initial MVP release of the OpenHands Mac client application, we will foc
 The following features will be excluded from the MVP to expedite the initial release:
 
 - Advanced File Management (create, delete, rename)
-- Extended Settings Panel (beyond basic backend connection)
 - Prompt Configuration Area (MicroAgent management)
 - Memory Area visualization
 - Pause/Resume and Step control buttons
 - Dedicated Terminal/Command Output section (agent output display suffices)
+- Advanced conversation grouping and tagging
+- Settings import/export functionality
+- Offline support
 
 ## MVP Focus
 
@@ -64,7 +74,10 @@ The primary focus of the MVP is to enable the following functionalities:
 - View the agent's execution and outputs in real-time.
 - Navigate and view files within the workspace.
 - Start and stop agent execution.
-- Connect to a local OpenHands backend.
+- Connect to a local or remote OpenHands backend.
+- Configure all client and backend settings through a comprehensive tabbed interface.
+- Create, switch between, and manage multiple conversations.
+- View and search conversation history.
 
 ## Technical Architecture
 
