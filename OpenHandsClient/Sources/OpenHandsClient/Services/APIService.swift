@@ -14,7 +14,7 @@ public class APIService {
     /// Perform a GET request
     public func get<T: Decodable>(endpoint: String) -> AnyPublisher<T, OpenHandsError> {
         guard let baseURL = settings.baseURL else {
-            return Fail(error: OpenHandsError.connectionFailed("Invalid base URL")).eraseToAnyPublisher()
+            return Fail(error: OpenHandsError.invalidURL(message: "Invalid base URL")).eraseToAnyPublisher()
         }
         
         let url = baseURL.appendingPathComponent(endpoint)
@@ -27,7 +27,7 @@ public class APIService {
     /// Perform a POST request
     public func post<T: Decodable, E: Encodable>(endpoint: String, body: E) -> AnyPublisher<T, OpenHandsError> {
         guard let baseURL = settings.baseURL else {
-            return Fail(error: OpenHandsError.connectionFailed("Invalid base URL")).eraseToAnyPublisher()
+            return Fail(error: OpenHandsError.invalidURL(message: "Invalid base URL")).eraseToAnyPublisher()
         }
         
         let url = baseURL.appendingPathComponent(endpoint)
@@ -39,7 +39,7 @@ public class APIService {
             let encoder = JSONEncoder()
             request.httpBody = try encoder.encode(body)
         } catch {
-            return Fail(error: OpenHandsError.requestFailed("Failed to encode request body: \(error.localizedDescription)")).eraseToAnyPublisher()
+            return Fail(error: OpenHandsError.encodingFailed(message: "Failed to encode request body: \(error.localizedDescription)")).eraseToAnyPublisher()
         }
         
         return performRequest(request)
@@ -48,7 +48,7 @@ public class APIService {
     /// Perform a PUT request
     public func put<T: Decodable, E: Encodable>(endpoint: String, body: E) -> AnyPublisher<T, OpenHandsError> {
         guard let baseURL = settings.baseURL else {
-            return Fail(error: OpenHandsError.connectionFailed("Invalid base URL")).eraseToAnyPublisher()
+            return Fail(error: OpenHandsError.invalidURL(message: "Invalid base URL")).eraseToAnyPublisher()
         }
         
         let url = baseURL.appendingPathComponent(endpoint)
@@ -60,7 +60,7 @@ public class APIService {
             let encoder = JSONEncoder()
             request.httpBody = try encoder.encode(body)
         } catch {
-            return Fail(error: OpenHandsError.requestFailed("Failed to encode request body: \(error.localizedDescription)")).eraseToAnyPublisher()
+            return Fail(error: OpenHandsError.encodingFailed(message: "Failed to encode request body: \(error.localizedDescription)")).eraseToAnyPublisher()
         }
         
         return performRequest(request)
@@ -69,7 +69,7 @@ public class APIService {
     /// Perform a DELETE request
     public func delete<T: Decodable>(endpoint: String) -> AnyPublisher<T, OpenHandsError> {
         guard let baseURL = settings.baseURL else {
-            return Fail(error: OpenHandsError.connectionFailed("Invalid base URL")).eraseToAnyPublisher()
+            return Fail(error: OpenHandsError.invalidURL(message: "Invalid base URL")).eraseToAnyPublisher()
         }
         
         let url = baseURL.appendingPathComponent(endpoint)
@@ -83,15 +83,44 @@ public class APIService {
     private func performRequest<T: Decodable>(_ request: URLRequest) -> AnyPublisher<T, OpenHandsError> {
         return session.dataTaskPublisher(for: request)
             .mapError { error in
-                return OpenHandsError.requestFailed(error.localizedDescription)
+                if let urlError = error as? URLError {
+                    switch urlError.code {
+                    case .notConnectedToInternet, .networkConnectionLost:
+                        return OpenHandsError.networkUnavailable(message: "No network connection available: \(error.localizedDescription)")
+                    case .timedOut:
+                        return OpenHandsError.socketTimeout(message: "Request timed out: \(error.localizedDescription)")
+                    case .serverCertificateUntrusted, .serverCertificateHasUnknownRoot:
+                        return OpenHandsError.sslCertificateInvalid(message: "SSL certificate validation failed: \(error.localizedDescription)")
+                    default:
+                        return OpenHandsError.connectionFailed(message: "Connection failed: \(error.localizedDescription)")
+                    }
+                }
+                return OpenHandsError.connectionFailed(message: "Connection failed: \(error.localizedDescription)")
             }
             .flatMap { data, response -> AnyPublisher<T, OpenHandsError> in
                 guard let httpResponse = response as? HTTPURLResponse else {
-                    return Fail(error: OpenHandsError.invalidResponse(-1)).eraseToAnyPublisher()
+                    return Fail(error: OpenHandsError.invalidResponse(message: "Invalid HTTP response")).eraseToAnyPublisher()
                 }
                 
-                guard (200...299).contains(httpResponse.statusCode) else {
-                    return Fail(error: OpenHandsError.invalidResponse(httpResponse.statusCode)).eraseToAnyPublisher()
+                // Handle different HTTP status codes
+                switch httpResponse.statusCode {
+                case 200...299:
+                    // Success
+                    break
+                case 400:
+                    return Fail(error: OpenHandsError.invalidRequest(message: "Bad request")).eraseToAnyPublisher()
+                case 401:
+                    return Fail(error: OpenHandsError.unauthorizedAccess(message: "Authentication required")).eraseToAnyPublisher()
+                case 403:
+                    return Fail(error: OpenHandsError.unauthorizedAccess(message: "Access forbidden")).eraseToAnyPublisher()
+                case 404:
+                    return Fail(error: OpenHandsError.resourceNotFound(message: "Resource not found")).eraseToAnyPublisher()
+                case 429:
+                    return Fail(error: OpenHandsError.rateLimitExceeded(message: "Too many requests")).eraseToAnyPublisher()
+                case 500...599:
+                    return Fail(error: OpenHandsError.serverError(code: httpResponse.statusCode, message: "Server error")).eraseToAnyPublisher()
+                default:
+                    return Fail(error: OpenHandsError.requestFailed(code: httpResponse.statusCode, message: "Request failed with status code \(httpResponse.statusCode)")).eraseToAnyPublisher()
                 }
                 
                 do {
@@ -101,7 +130,7 @@ public class APIService {
                         .setFailureType(to: OpenHandsError.self)
                         .eraseToAnyPublisher()
                 } catch {
-                    return Fail(error: OpenHandsError.decodingFailed(error.localizedDescription)).eraseToAnyPublisher()
+                    return Fail(error: OpenHandsError.decodingFailed(message: "Failed to decode response: \(error.localizedDescription)")).eraseToAnyPublisher()
                 }
             }
             .eraseToAnyPublisher()
