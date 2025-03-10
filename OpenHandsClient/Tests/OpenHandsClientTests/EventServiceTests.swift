@@ -2,7 +2,7 @@ import XCTest
 import Combine
 @testable import OpenHandsClient
 
-final class EventManagerTests: XCTestCase {
+final class EventServiceTests: XCTestCase {
     var cancellables = Set<AnyCancellable>()
     
     func testEventRouting() {
@@ -12,8 +12,8 @@ final class EventManagerTests: XCTestCase {
         // Create socket service
         let socketService = SocketIOService(settings: settings)
         
-        // Create event manager
-        let eventManager = EventManager(socketService: socketService)
+        // Create event service
+        let eventService = EventService(socketService: socketService)
         
         // Set up expectations
         let commandExpectation = expectation(description: "Command observation received")
@@ -21,7 +21,7 @@ final class EventManagerTests: XCTestCase {
         let agentExpectation = expectation(description: "Agent observation received")
         
         // Subscribe to command observations
-        eventManager.commandPublisher
+        eventService.commandPublisher
             .sink { observation in
                 XCTAssertEqual(observation.output, "Test output")
                 XCTAssertEqual(observation.exitCode, 0)
@@ -31,7 +31,7 @@ final class EventManagerTests: XCTestCase {
             .store(in: &cancellables)
         
         // Subscribe to file observations
-        eventManager.filePublisher
+        eventService.filePublisher
             .sink { observation in
                 XCTAssertEqual(observation.path, "/test/path")
                 XCTAssertEqual(observation.content, "Test content")
@@ -40,7 +40,7 @@ final class EventManagerTests: XCTestCase {
             .store(in: &cancellables)
         
         // Subscribe to agent observations
-        eventManager.agentPublisher
+        eventService.agentPublisher
             .sink { observation in
                 XCTAssertEqual(observation.content, "Agent response")
                 XCTAssertEqual(observation.status, .responding)
@@ -73,9 +73,9 @@ final class EventManagerTests: XCTestCase {
         // In a real test, we would mock the socket service to emit these events
         // For now, we'll just call the private method directly for testing
         // This is not ideal but works for demonstration purposes
-        eventManager.perform(#selector(NSSelectorFromString("routeEvent:")), with: commandObservation)
-        eventManager.perform(#selector(NSSelectorFromString("routeEvent:")), with: fileObservation)
-        eventManager.perform(#selector(NSSelectorFromString("routeEvent:")), with: agentObservation)
+        eventService.perform(#selector(NSSelectorFromString("routeEvent:")), with: commandObservation)
+        eventService.perform(#selector(NSSelectorFromString("routeEvent:")), with: fileObservation)
+        eventService.perform(#selector(NSSelectorFromString("routeEvent:")), with: agentObservation)
         
         // Wait for expectations
         wait(for: [commandExpectation, fileExpectation, agentExpectation], timeout: 1.0)

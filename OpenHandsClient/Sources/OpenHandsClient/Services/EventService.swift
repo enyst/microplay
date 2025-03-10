@@ -1,8 +1,8 @@
 import Foundation
 import Combine
 
-/// Manager for handling and routing events
-public class EventManager {
+/// Service for handling and routing events
+public class EventService {
     private let socketService: SocketIOService
     private var cancellables = Set<AnyCancellable>()
     

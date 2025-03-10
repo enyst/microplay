@@ -5,7 +5,7 @@ import Combine
 public class ClientViewModel: ObservableObject {
     private let socketService: SocketIOService
     private let apiService: APIService
-    private let eventManager: EventManager
+    private let eventService: EventService
     private var cancellables = Set<AnyCancellable>()
     
     // Published properties for UI updates
@@ -22,14 +22,14 @@ public class ClientViewModel: ObservableObject {
     public init(settings: BackendSettings) {
         self.socketService = SocketIOService(settings: settings)
         self.apiService = APIService(settings: settings)
-        self.eventManager = EventManager(socketService: socketService)
+        self.eventService = EventService(socketService: socketService)
         
         setupSubscriptions()
     }
     
     private func setupSubscriptions() {
         // Status updates
-        eventManager.statusPublisher
+        eventService.statusPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in
                 guard let self = self else { return }
@@ -50,7 +50,7 @@ public class ClientViewModel: ObservableObject {
             .store(in: &cancellables)
         
         // Command observations
-        eventManager.commandPublisher
+        eventService.commandPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] observation in
                 guard let self = self else { return }
@@ -64,7 +64,7 @@ public class ClientViewModel: ObservableObject {
             .store(in: &cancellables)
         
         // Agent observations
-        eventManager.agentPublisher
+        eventService.agentPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] observation in
                 guard let self = self else { return }
@@ -75,7 +75,7 @@ public class ClientViewModel: ObservableObject {
             .store(in: &cancellables)
         
         // File observations
-        eventManager.filePublisher
+        eventService.filePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] observation in
                 guard let self = self else { return }
@@ -111,7 +111,7 @@ public class ClientViewModel: ObservableObject {
     // Command execution
     
     public func executeCommand(_ command: String) {
-        eventManager.executeCommand(command)
+        eventService.executeCommand(command)
             .sink(
                 receiveCompletion: { [weak self] completion in
                     if case .failure(let error) = completion {
@@ -126,7 +126,7 @@ public class ClientViewModel: ObservableObject {
     // File operations
     
     public func readFile(path: String) {
-        eventManager.readFile(path: path)
+        eventService.readFile(path: path)
             .sink(
                 receiveCompletion: { [weak self] completion in
                     if case .failure(let error) = completion {
@@ -139,7 +139,7 @@ public class ClientViewModel: ObservableObject {
     }
     
     public func writeFile(path: String, content: String) {
-        eventManager.writeFile(path: path, content: content)
+        eventService.writeFile(path: path, content: content)
             .sink(
                 receiveCompletion: { [weak self] completion in
                     if case .failure(let error) = completion {
@@ -152,7 +152,7 @@ public class ClientViewModel: ObservableObject {
     }
     
     public func listFiles(path: String) {
-        eventManager.listFiles(path: path)
+        eventService.listFiles(path: path)
             .sink(
                 receiveCompletion: { [weak self] completion in
                     if case .failure(let error) = completion {
@@ -167,7 +167,7 @@ public class ClientViewModel: ObservableObject {
     // Agent control
     
     public func startAgent() {
-        eventManager.startAgent()
+        eventService.startAgent()
             .sink(
                 receiveCompletion: { [weak self] completion in
                     if case .failure(let error) = completion {
@@ -180,7 +180,7 @@ public class ClientViewModel: ObservableObject {
     }
     
     public func stopAgent() {
-        eventManager.stopAgent()
+        eventService.stopAgent()
             .sink(
                 receiveCompletion: { [weak self] completion in
                     if case .failure(let error) = completion {
@@ -193,7 +193,7 @@ public class ClientViewModel: ObservableObject {
     }
     
     public func resetAgent() {
-        eventManager.resetAgent()
+        eventService.resetAgent()
             .sink(
                 receiveCompletion: { [weak self] completion in
                     if case .failure(let error) = completion {
@@ -206,7 +206,7 @@ public class ClientViewModel: ObservableObject {
     }
     
     public func sendMessage(content: String) {
-        eventManager.sendMessage(content: content)
+        eventService.sendMessage(content: content)
             .sink(
                 receiveCompletion: { [weak self] completion in
                     if case .failure(let error) = completion {
