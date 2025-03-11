@@ -19,11 +19,18 @@ class MockAppState: ObservableObject {
 
 // Mock SocketIOClient for testing
 class MockSocketIOClient {
+    struct EmittedEvent {
+        let name: String
+        let items: [Any]
+    }
+    
     var emitCalls: [(String, [Any])] = []
+    var emittedEvents: [EmittedEvent] = []
     var onHandlers: [String: ([Any], SocketAckEmitter?) -> Void] = [:]
     
     func emit(_ event: String, _ items: Any...) {
         emitCalls.append((event, items))
+        emittedEvents.append(EmittedEvent(name: event, items: items))
     }
     
     func on(_ event: String, callback: @escaping ([Any], SocketAckEmitter?) -> Void) {
@@ -61,7 +68,17 @@ class SocketServiceTests: XCTestCase {
         ("testProcessObservationAgentStateChangedEvent", testProcessObservationAgentStateChangedEvent),
         ("testProcessObservationErrorEvent", testProcessObservationErrorEvent),
         ("testProcessUnknownEvent", testProcessUnknownEvent),
-        ("testDelegateNotification", testDelegateNotification)
+        ("testDelegateNotification", testDelegateNotification),
+        
+        // Event emission tests
+        ("testSendAction", testSendAction),
+        ("testSendMessage", testSendMessage),
+        ("testExecuteCommand", testExecuteCommand),
+        ("testReadFile", testReadFile),
+        ("testWriteFile", testWriteFile),
+        ("testEditFile", testEditFile),
+        ("testBrowseUrl", testBrowseUrl),
+        ("testBrowseInteractive", testBrowseInteractive)
     ]
     
     var socketService: SocketService!
@@ -465,5 +482,232 @@ class SocketServiceTests: XCTestCase {
         XCTAssertEqual(mockDelegate.processedEvents.count, 1)
         XCTAssertEqual(mockDelegate.processedEvents[0].id, 15)
         XCTAssertEqual(mockDelegate.processedEvents[0].message, "Hello, world!")
+    }
+    
+    // MARK: - Event Emission Tests
+    
+    func testSendAction() {
+        // Call the method
+        socketService.sendAction(action: "testAction", args: ["key": "value"])
+        
+        // Verify the socket emitted the correct event
+        XCTAssertEqual(mockSocket.emittedEvents.count, 1)
+        XCTAssertEqual(mockSocket.emittedEvents[0].name, "action")
+        
+        // Verify the data structure
+        if let data = mockSocket.emittedEvents[0].items[0] as? [String: Any],
+           let action = data["action"] as? String,
+           let args = data["args"] as? [String: Any] {
+            XCTAssertEqual(action, "testAction")
+            XCTAssertEqual(args["key"] as? String, "value")
+        } else {
+            XCTFail("Emitted data structure is incorrect")
+        }
+    }
+    
+    func testSendMessage() {
+        // Test with text only
+        socketService.sendMessage(content: "Hello server")
+        
+        // Verify the socket emitted the correct event
+        XCTAssertEqual(mockSocket.emittedEvents.count, 1)
+        XCTAssertEqual(mockSocket.emittedEvents[0].name, "action")
+        
+        // Verify the data structure
+        if let data = mockSocket.emittedEvents[0].items[0] as? [String: Any],
+           let action = data["action"] as? String,
+           let args = data["args"] as? [String: Any],
+           let content = args["content"] as? String {
+            XCTAssertEqual(action, "message")
+            XCTAssertEqual(content, "Hello server")
+            XCTAssertNil(args["imageUrls"])
+        } else {
+            XCTFail("Emitted data structure is incorrect")
+        }
+        
+        // Reset mock
+        mockSocket.emittedEvents = []
+        
+        // Test with text and images
+        let imageUrls = ["image1.jpg", "image2.jpg"]
+        socketService.sendMessage(content: "Hello with images", imageUrls: imageUrls)
+        
+        // Verify the socket emitted the correct event
+        XCTAssertEqual(mockSocket.emittedEvents.count, 1)
+        XCTAssertEqual(mockSocket.emittedEvents[0].name, "action")
+        
+        // Verify the data structure
+        if let data = mockSocket.emittedEvents[0].items[0] as? [String: Any],
+           let action = data["action"] as? String,
+           let args = data["args"] as? [String: Any],
+           let content = args["content"] as? String,
+           let urls = args["imageUrls"] as? [String] {
+            XCTAssertEqual(action, "message")
+            XCTAssertEqual(content, "Hello with images")
+            XCTAssertEqual(urls, imageUrls)
+        } else {
+            XCTFail("Emitted data structure is incorrect")
+        }
+    }
+    
+    func testExecuteCommand() {
+        // Test basic command
+        socketService.executeCommand(command: "ls -la")
+        
+        // Verify the socket emitted the correct event
+        XCTAssertEqual(mockSocket.emittedEvents.count, 1)
+        XCTAssertEqual(mockSocket.emittedEvents[0].name, "action")
+        
+        // Verify the data structure
+        if let data = mockSocket.emittedEvents[0].items[0] as? [String: Any],
+           let action = data["action"] as? String,
+           let args = data["args"] as? [String: Any],
+           let command = args["command"] as? String {
+            XCTAssertEqual(action, "run")
+            XCTAssertEqual(command, "ls -la")
+            XCTAssertEqual(args["securityRisk"] as? Bool, false)
+            XCTAssertNil(args["confirmationState"])
+            XCTAssertNil(args["thought"])
+        } else {
+            XCTFail("Emitted data structure is incorrect")
+        }
+        
+        // Reset mock
+        mockSocket.emittedEvents = []
+        
+        // Test with all parameters
+        socketService.executeCommand(
+            command: "rm -rf /",
+            securityRisk: true,
+            confirmationState: "confirmed",
+            thought: "This is a dangerous command"
+        )
+        
+        // Verify the socket emitted the correct event
+        XCTAssertEqual(mockSocket.emittedEvents.count, 1)
+        XCTAssertEqual(mockSocket.emittedEvents[0].name, "action")
+        
+        // Verify the data structure
+        if let data = mockSocket.emittedEvents[0].items[0] as? [String: Any],
+           let action = data["action"] as? String,
+           let args = data["args"] as? [String: Any],
+           let command = args["command"] as? String,
+           let securityRisk = args["securityRisk"] as? Bool,
+           let confirmationState = args["confirmationState"] as? String,
+           let thought = args["thought"] as? String {
+            XCTAssertEqual(action, "run")
+            XCTAssertEqual(command, "rm -rf /")
+            XCTAssertEqual(securityRisk, true)
+            XCTAssertEqual(confirmationState, "confirmed")
+            XCTAssertEqual(thought, "This is a dangerous command")
+        } else {
+            XCTFail("Emitted data structure is incorrect")
+        }
+    }
+    
+    func testReadFile() {
+        // Call the method
+        socketService.readFile(path: "/path/to/file.txt")
+        
+        // Verify the socket emitted the correct event
+        XCTAssertEqual(mockSocket.emittedEvents.count, 1)
+        XCTAssertEqual(mockSocket.emittedEvents[0].name, "action")
+        
+        // Verify the data structure
+        if let data = mockSocket.emittedEvents[0].items[0] as? [String: Any],
+           let action = data["action"] as? String,
+           let args = data["args"] as? [String: Any],
+           let path = args["path"] as? String {
+            XCTAssertEqual(action, "read")
+            XCTAssertEqual(path, "/path/to/file.txt")
+        } else {
+            XCTFail("Emitted data structure is incorrect")
+        }
+    }
+    
+    func testWriteFile() {
+        // Call the method
+        socketService.writeFile(path: "/path/to/file.txt", content: "Hello, world!")
+        
+        // Verify the socket emitted the correct event
+        XCTAssertEqual(mockSocket.emittedEvents.count, 1)
+        XCTAssertEqual(mockSocket.emittedEvents[0].name, "action")
+        
+        // Verify the data structure
+        if let data = mockSocket.emittedEvents[0].items[0] as? [String: Any],
+           let action = data["action"] as? String,
+           let args = data["args"] as? [String: Any],
+           let path = args["path"] as? String,
+           let content = args["content"] as? String {
+            XCTAssertEqual(action, "write")
+            XCTAssertEqual(path, "/path/to/file.txt")
+            XCTAssertEqual(content, "Hello, world!")
+        } else {
+            XCTFail("Emitted data structure is incorrect")
+        }
+    }
+    
+    func testEditFile() {
+        // Call the method
+        socketService.editFile(path: "/path/to/file.txt", oldContent: "Hello", newContent: "Hello, world!")
+        
+        // Verify the socket emitted the correct event
+        XCTAssertEqual(mockSocket.emittedEvents.count, 1)
+        XCTAssertEqual(mockSocket.emittedEvents[0].name, "action")
+        
+        // Verify the data structure
+        if let data = mockSocket.emittedEvents[0].items[0] as? [String: Any],
+           let action = data["action"] as? String,
+           let args = data["args"] as? [String: Any],
+           let path = args["path"] as? String,
+           let oldContent = args["oldContent"] as? String,
+           let newContent = args["newContent"] as? String {
+            XCTAssertEqual(action, "edit")
+            XCTAssertEqual(path, "/path/to/file.txt")
+            XCTAssertEqual(oldContent, "Hello")
+            XCTAssertEqual(newContent, "Hello, world!")
+        } else {
+            XCTFail("Emitted data structure is incorrect")
+        }
+    }
+    
+    func testBrowseUrl() {
+        // Call the method
+        socketService.browseUrl(url: "https://example.com")
+        
+        // Verify the socket emitted the correct event
+        XCTAssertEqual(mockSocket.emittedEvents.count, 1)
+        XCTAssertEqual(mockSocket.emittedEvents[0].name, "action")
+        
+        // Verify the data structure
+        if let data = mockSocket.emittedEvents[0].items[0] as? [String: Any],
+           let action = data["action"] as? String,
+           let args = data["args"] as? [String: Any],
+           let url = args["url"] as? String {
+            XCTAssertEqual(action, "browse")
+            XCTAssertEqual(url, "https://example.com")
+        } else {
+            XCTFail("Emitted data structure is incorrect")
+        }
+    }
+    
+    func testBrowseInteractive() {
+        // Call the method
+        socketService.browseInteractive(code: "click('button')")
+        
+        // Verify the socket emitted the correct event
+        XCTAssertEqual(mockSocket.emittedEvents.count, 1)
+        XCTAssertEqual(mockSocket.emittedEvents[0].name, "action")
+        
+        // Verify the data structure
+        if let data = mockSocket.emittedEvents[0].items[0] as? [String: Any],
+           let action = data["action"] as? String,
+           let args = data["args"] as? [String: Any],
+           let code = args["code"] as? String {
+            XCTAssertEqual(action, "browse_interactive")
+            XCTAssertEqual(code, "click('button')")
+        } else {
+            XCTFail("Emitted data structure is incorrect")
+        }
     }
 }
