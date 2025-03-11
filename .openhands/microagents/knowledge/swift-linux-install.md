@@ -59,8 +59,6 @@ cd /workspace
 wget https://download.swift.org/swift-6.0.3-release/debian12/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-debian12.tar.gz
 ```
 
-> **Note**: Check the Swift.org page for the latest version and update the version number in the URL if necessary (e.g., replace `6.0.3` with the current version).
-
 3. Extract the archive:
 
 ```bash
