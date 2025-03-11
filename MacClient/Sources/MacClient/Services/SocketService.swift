@@ -311,6 +311,9 @@ class SocketService {
         guard let appState = appState else { return }
         
         DispatchQueue.main.async {
+            // Log the event for debugging
+            print("Processing event: \(event.id) - \(event.source) - \(event.message)")
+            
             // Add the event to the events array
             if !appState.events.contains(where: { $0.id == event.id }) {
                 appState.events.append(event)
@@ -323,7 +326,20 @@ class SocketService {
                 self.processActionEvent(event, appState: appState)
             } else if event.isObservation {
                 self.processObservationEvent(event, appState: appState)
+            } else {
+                // Handle unknown event type
+                print("Unknown event type: \(event)")
+                
+                // Add a message to the chat with the unknown event
+                let resultMessage = "Unknown event: \(event.message)"
+                let message = Message(text: resultMessage, sender: "system")
+                if !appState.messages.contains(where: { $0.text == resultMessage }) {
+                    appState.messages.append(message)
+                }
             }
+            
+            // Notify the delegate that an event was processed
+            self.delegate?.socketService(self, didProcessEvent: event)
         }
     }
     
@@ -332,14 +348,144 @@ class SocketService {
     ///   - event: The action event to process
     ///   - appState: The application state to update
     private func processActionEvent(_ event: Event, appState: AppState) {
-        // Handle specific action types
-        if event.isMessage {
+        guard let action = event.action else {
+            print("Action event missing action type: \(event)")
+            return
+        }
+        
+        print("Processing action event: \(action) from \(event.source)")
+        
+        switch action {
+        case "message":
             // Handle message action
             if event.source == "agent" {
                 // Agent message
                 if let waitForResponse = event.waitForResponse {
                     appState.isAwaitingUserConfirmation = waitForResponse
                 }
+                
+                // Create message with all available data
+                var message = Message(text: event.message, sender: event.source)
+                
+                // Add thought if available
+                if let thought = event.thought {
+                    print("Agent thought: \(thought)")
+                    message.thought = thought
+                }
+                
+                // Add image URLs if available
+                if let imageUrls = event.imageUrls, !imageUrls.isEmpty {
+                    print("Agent shared images: \(imageUrls)")
+                    message.imageUrls = imageUrls
+                }
+                
+                // Add the message to the messages array if it doesn't already exist
+                if !appState.messages.contains(where: { $0.id == message.id }) {
+                    appState.messages.append(message)
+                }
+            } else if event.source == "user" {
+                // User message
+                var message = Message(text: event.message, sender: event.source)
+                
+                // Add image URLs if available
+                if let args = event.args, let imageUrls = args["image_urls"] as? [String], !imageUrls.isEmpty {
+                    print("User shared images: \(imageUrls)")
+                    message.imageUrls = imageUrls
+                }
+                
+                // Add the message to the messages array if it doesn't already exist
+                if !appState.messages.contains(where: { $0.id == message.id }) {
+                    appState.messages.append(message)
+                }
+            }
+            
+        case "run":
+            // Command execution request
+            if let args = event.args, let command = args["command"] as? String {
+                // Mark the command as running in the terminal commands
+                let terminalCommand = TerminalCommand(
+                    id: UUID(),
+                    command: command,
+                    output: "Running...",
+                    exitCode: -1, // -1 indicates running
+                    isRunning: true
+                )
+                
+                // Add or update the command in the terminal commands
+                if !appState.terminalCommands.contains(where: { $0.command == command }) {
+                    appState.terminalCommands.append(terminalCommand)
+                } else {
+                    // Update the existing command
+                    if let index = appState.terminalCommands.firstIndex(where: { $0.command == command }) {
+                        appState.terminalCommands[index] = terminalCommand
+                    }
+                }
+                
+                // Add a message to the chat about the command execution
+                let message = Message(text: "Executing command: \(command)", sender: "system")
+                if !appState.messages.contains(where: { $0.text == message.text }) {
+                    appState.messages.append(message)
+                }
+            }
+            
+        case "read":
+            // File read request
+            if let args = event.args, let path = args["path"] as? String {
+                // Add a message to the chat about the file read
+                let message = Message(text: "Reading file: \(path)", sender: "system")
+                if !appState.messages.contains(where: { $0.text == message.text }) {
+                    appState.messages.append(message)
+                }
+            }
+            
+        case "write":
+            // File write request
+            if let args = event.args, let path = args["path"] as? String {
+                // Add a message to the chat about the file write
+                let message = Message(text: "Writing to file: \(path)", sender: "system")
+                if !appState.messages.contains(where: { $0.text == message.text }) {
+                    appState.messages.append(message)
+                }
+            }
+            
+        case "edit":
+            // File edit request
+            if let args = event.args, let path = args["path"] as? String {
+                // Add a message to the chat about the file edit
+                let message = Message(text: "Editing file: \(path)", sender: "system")
+                if !appState.messages.contains(where: { $0.text == message.text }) {
+                    appState.messages.append(message)
+                }
+            }
+            
+        case "browse":
+            // Browser navigation request
+            if let args = event.args, let url = args["url"] as? String {
+                // Add a message to the chat about the browser navigation
+                let message = Message(text: "Navigating to: \(url)", sender: "system")
+                if !appState.messages.contains(where: { $0.text == message.text }) {
+                    appState.messages.append(message)
+                }
+            }
+            
+        case "browse_interactive":
+            // Interactive browser request
+            if let args = event.args, let code = args["code"] as? String {
+                // Add a message to the chat about the interactive browser action
+                let message = Message(text: "Executing browser interaction", sender: "system")
+                if !appState.messages.contains(where: { $0.text == message.text }) {
+                    appState.messages.append(message)
+                }
+            }
+            
+        default:
+            // Handle unknown action type
+            print("Unknown action type: \(action)")
+            
+            // Add a message to the chat with the unknown action
+            let message = Message(text: "Unknown action: \(action)", sender: "system")
+            if !appState.messages.contains(where: { $0.text == message.text }) {
+                appState.messages.append(message)
             }
         }
     }
@@ -349,8 +495,14 @@ class SocketService {
     ///   - event: The observation event to process
     ///   - appState: The application state to update
     private func processObservationEvent(_ event: Event, appState: AppState) {
-        // Handle specific observation types
-        switch event.observation {
+        guard let observation = event.observation else {
+            print("Observation event missing observation type: \(event)")
+            return
+        }
+        
+        print("Processing observation event: \(observation) for event #\(event.cause ?? -1)")
+        
+        switch observation {
         case "run":
             // Handle command execution result
             if let command = event.command, let exitCode = event.exitCode {
@@ -361,32 +513,142 @@ class SocketService {
                     exitCode: exitCode,
                     isRunning: false
                 )
-                appState.terminalCommands.append(terminalCommand)
+                
+                // Check if we already have this command in the list
+                if !appState.terminalCommands.contains(where: { $0.command == command }) {
+                    appState.terminalCommands.append(terminalCommand)
+                } else {
+                    // Update the existing command with the new output
+                    if let index = appState.terminalCommands.firstIndex(where: { $0.command == command }) {
+                        appState.terminalCommands[index] = terminalCommand
+                    }
+                }
+                
+                // Add a message to the chat with the command result
+                let resultMessage: String
+                if exitCode == 0 {
+                    resultMessage = "Command executed successfully: \(command)"
+                } else {
+                    resultMessage = "Command executed with error (exit code \(exitCode)): \(command)"
+                }
+                
+                let message = Message(text: resultMessage, sender: "system")
+                if !appState.messages.contains(where: { $0.text == resultMessage }) {
+                    appState.messages.append(message)
+                }
+                
+                // Update agent state
+                appState.isAgentExecuting = false
             }
             
         case "read":
             // Handle file read result
             if let path = event.path {
                 appState.selectedFilePath = path
-                // You might want to store the file content in the app state as well
+                
+                // Store the file content in the app state if available
+                if let content = event.content {
+                    // Add a message to the chat with the file read result
+                    let resultMessage = "File read: \(path)"
+                    let message = Message(text: resultMessage, sender: "system")
+                    if !appState.messages.contains(where: { $0.text == resultMessage }) {
+                        appState.messages.append(message)
+                    }
+                } else {
+                    // Handle error case where content is missing
+                    let errorMessage = "Error reading file: \(path)"
+                    let message = Message(text: errorMessage, sender: "system")
+                    if !appState.messages.contains(where: { $0.text == errorMessage }) {
+                        appState.messages.append(message)
+                    }
+                }
             }
             
-        case "write", "edit":
-            // Handle file write/edit result
-            if let path = event.path {
+        case "write":
+            // Handle file write result
+            if let extras = event.extras, let path = extras["path"] as? String {
                 // Refresh file explorer after file operations
                 appState.refreshFileExplorer()
+                
+                // Add a message to the chat with the file write result
+                let resultMessage = "File written: \(path)"
+                let message = Message(text: resultMessage, sender: "system")
+                if !appState.messages.contains(where: { $0.text == resultMessage }) {
+                    appState.messages.append(message)
+                }
+            } else {
+                // Handle error case where path is missing
+                let errorMessage = "Error writing file: path not provided"
+                let message = Message(text: errorMessage, sender: "system")
+                if !appState.messages.contains(where: { $0.text == errorMessage }) {
+                    appState.messages.append(message)
+                }
+            }
+            
+        case "edit":
+            // Handle file edit result
+            if let extras = event.extras, let path = extras["path"] as? String {
+                // Refresh file explorer after file operations
+                appState.refreshFileExplorer()
+                
+                // Get the diff if available
+                let diff = extras["diff"] as? String ?? "No diff available"
+                
+                // Add a message to the chat with the file edit result
+                let resultMessage = "File edited: \(path)"
+                let message = Message(text: resultMessage, sender: "system")
+                if !appState.messages.contains(where: { $0.text == resultMessage }) {
+                    appState.messages.append(message)
+                }
+            } else {
+                // Handle error case where path is missing
+                let errorMessage = "Error editing file: path not provided"
+                let message = Message(text: errorMessage, sender: "system")
+                if !appState.messages.contains(where: { $0.text == errorMessage }) {
+                    appState.messages.append(message)
+                }
             }
             
         case "browse":
             // Handle browser output
-            if let url = event.url {
-                // Update browser state
+            if let extras = event.extras, let url = extras["url"] as? String {
+                // Add a message to the chat with the browser result
+                let resultMessage = "Browsed URL: \(url)"
+                let message = Message(text: resultMessage, sender: "system")
+                if !appState.messages.contains(where: { $0.text == resultMessage }) {
+                    appState.messages.append(message)
+                }
+                
+                // Check for screenshot
+                if let screenshot = extras["screenshot"] as? String {
+                    print("Browser screenshot available")
+                    // Create a message with the screenshot URL
+                    let screenshotMessage = Message(
+                        text: "Browser screenshot",
+                        sender: "system",
+                        imageUrls: [screenshot]
+                    )
+                    appState.messages.append(screenshotMessage)
+                }
+                
+                // Check for DOM object
+                if let domObject = extras["dom_object"] as? [String: Any] {
+                    print("Browser DOM object available: \(domObject)")
+                    // You might want to process the DOM object for UI display
+                }
+            } else {
+                // Handle error case where URL is missing
+                let errorMessage = "Error browsing: URL not provided"
+                let message = Message(text: errorMessage, sender: "system")
+                if !appState.messages.contains(where: { $0.text == errorMessage }) {
+                    appState.messages.append(message)
+                }
             }
             
         case "agent_state_changed":
             // Handle agent state change
-            if let agentState = event.agentState {
+            if let extras = event.extras, let agentState = extras["agent_state"] as? String {
+                // Update agent state flags
                 appState.isAgentThinking = agentState == "thinking"
                 appState.isAgentExecuting = agentState == "executing"
                 
@@ -399,18 +661,50 @@ class SocketService {
                 default:
                     break
                 }
+                
+                // Add a message to the chat with the agent state change
+                let resultMessage = "Agent state changed to: \(agentState)"
+                let message = Message(text: resultMessage, sender: "system")
+                if !appState.messages.contains(where: { $0.text == resultMessage }) {
+                    appState.messages.append(message)
+                }
+            } else {
+                // Handle error case where agent state is missing
+                let errorMessage = "Error: Agent state not provided"
+                let message = Message(text: errorMessage, sender: "system")
+                if !appState.messages.contains(where: { $0.text == errorMessage }) {
+                    appState.messages.append(message)
+                }
             }
             
         case "error":
             // Handle error observation
-            if let errorId = event.errorId {
-                appState.error = "Error: \(errorId) - \(event.message)"
+            let errorMessage: String
+            if let extras = event.extras, let errorId = extras["error_id"] as? String {
+                errorMessage = "Error: \(errorId) - \(event.message)"
             } else {
-                appState.error = "Error: \(event.message)"
+                errorMessage = "Error: \(event.message)"
+            }
+            
+            // Update app state error property
+            appState.error = errorMessage
+            
+            // Add a message to the chat with the error
+            let message = Message(text: errorMessage, sender: "system")
+            if !appState.messages.contains(where: { $0.text == errorMessage }) {
+                appState.messages.append(message)
             }
             
         default:
-            break
+            // Handle unknown observation type
+            print("Unknown observation type: \(observation)")
+            
+            // Add a message to the chat with the unknown observation
+            let resultMessage = "Unknown observation: \(observation)"
+            let message = Message(text: resultMessage, sender: "system")
+            if !appState.messages.contains(where: { $0.text == resultMessage }) {
+                appState.messages.append(message)
+            }
         }
     }
 }

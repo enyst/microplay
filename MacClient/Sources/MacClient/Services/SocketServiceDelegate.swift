@@ -8,6 +8,12 @@ protocol SocketServiceDelegate: AnyObject {
     ///   - event: The event that was received
     func socketService(_ service: SocketService, didReceiveEvent event: Event)
     
+    /// Called when a socket event is processed and the app state is updated
+    /// - Parameters:
+    ///   - service: The socket service that processed the event
+    ///   - event: The event that was processed
+    func socketService(_ service: SocketService, didProcessEvent event: Event)
+    
     /// Called when the socket connects
     /// - Parameter service: The socket service that connected
     func socketServiceDidConnect(_ service: SocketService)

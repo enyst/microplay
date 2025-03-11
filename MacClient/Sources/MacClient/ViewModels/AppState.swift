@@ -19,6 +19,9 @@ class AppState: ObservableObject {
     /// The events received from the server
     @Published var events: [Event] = []
     
+    /// The messages in the chat interface
+    @Published var messages: [Message] = []
+    
     /// The latest error message
     @Published var error: String?
     
@@ -154,26 +157,18 @@ extension AppState: SocketServiceDelegate {
                 self.events.insert(event, at: 0)
             }
             
-            // Update the agent state based on the event
-            if event.isObservation, event.observation == "agent_state_changed" {
-                if let agentState = event.agentState {
-                    self.isAgentThinking = agentState == "thinking"
-                    self.isAgentExecuting = agentState == "executing"
-                    
-                    // Update other agent state properties as needed
-                    switch agentState {
-                    case "idle":
-                        self.isAwaitingUserConfirmation = false
-                    case "waiting_for_user_input":
-                        self.isAwaitingUserConfirmation = true
-                    default:
-                        break
-                    }
-                }
-            }
-            
             // Clear any error
             self.error = nil
+        }
+    }
+    
+    func socketService(_ service: SocketService, didProcessEvent event: Event) {
+        DispatchQueue.main.async {
+            // Log that the event was processed
+            print("Event processed: \(event.id) - \(event.source) - \(event.message)")
+            
+            // Update the UI based on the processed event
+            // This is handled by the SocketService's updateAppState method
         }
     }
     
