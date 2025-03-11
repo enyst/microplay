@@ -11,7 +11,7 @@
 
 # Swift Installation Guide for Debian Linux
 
-This document provides instructions for installing Swift on Debian 12 (Bookworm) for the microplay project.
+This document provides instructions for installing Swift on Debian 12 (Bookworm).
 
 > This setup is intended for non-UI development tasks on Swift on Linux.
 
