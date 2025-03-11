@@ -20,12 +20,12 @@ The Mac client follows the MVVM (Model-View-ViewModel) architecture pattern:
 
 - **Models**: `Event` represents events received from the server.
 - **Views**: `MainView` and `EventView` handle the UI presentation.
-- **ViewModels**: `AppState` manages the application state and coordinates between the UI and the socket manager.
-- **Services**: `SocketManager` handles the Socket.IO communication with the server.
+- **ViewModels**: `AppState` manages the application state and coordinates between the UI and the socket service.
+- **Services**: `SocketService` handles the Socket.IO communication with the server.
 
 ## Socket.IO Implementation
 
-The `SocketManager` class provides a foundation for communication with the OpenHands server using socket.io. It handles:
+The `SocketService` class provides a foundation for communication with the OpenHands server using socket.io. It handles:
 
 - Connection and disconnection
 - Event handling with delegate pattern
@@ -36,64 +36,64 @@ The `SocketManager` class provides a foundation for communication with the OpenH
 ### Usage
 
 ```swift
-// Initialize the socket manager
-let socketManager = SocketManager(serverUrl: URL(string: "http://openhands-server:3000")!)
+// Initialize the socket service
+let socketService = SocketService(serverUrl: URL(string: "http://openhands-server:3000")!)
 
 // Set the delegate
-socketManager.delegate = self
+socketService.delegate = self
 
 // Connect to a conversation
-socketManager.connect(conversationId: "your-conversation-id")
+socketService.connect(conversationId: "your-conversation-id")
 
 // Send a message
-socketManager.sendMessage(content: "Hello, OpenHands!")
+socketService.sendMessage(content: "Hello, OpenHands!")
 
 // Execute a command
-socketManager.executeCommand(command: "ls -la")
+socketService.executeCommand(command: "ls -la")
 
 // Read a file
-socketManager.readFile(path: "/path/to/file.txt")
+socketService.readFile(path: "/path/to/file.txt")
 
 // Write to a file
-socketManager.writeFile(path: "/path/to/file.txt", content: "Hello, world!")
+socketService.writeFile(path: "/path/to/file.txt", content: "Hello, world!")
 
 // Edit a file
-socketManager.editFile(path: "/path/to/file.txt", oldContent: "Hello, world!", newContent: "Hello, OpenHands!")
+socketService.editFile(path: "/path/to/file.txt", oldContent: "Hello, world!", newContent: "Hello, OpenHands!")
 
 // Navigate to a URL
-socketManager.browseUrl(url: "https://example.com")
+socketService.browseUrl(url: "https://example.com")
 
 // Disconnect when done
-socketManager.disconnect()
+socketService.disconnect()
 ```
 
 ### Event Handling with Delegate
 
-The `SocketManagerDelegate` protocol is used to receive events from the socket manager:
+The `SocketServiceDelegate` protocol is used to receive events from the socket service:
 
 ```swift
-protocol SocketManagerDelegate: AnyObject {
-    func socketManager(_ manager: SocketManager, didReceiveEvent event: Event)
-    func socketManagerDidConnect(_ manager: SocketManager)
-    func socketManagerDidDisconnect(_ manager: SocketManager)
-    func socketManager(_ manager: SocketManager, didEncounterError error: Error)
+protocol SocketServiceDelegate: AnyObject {
+    func socketService(_ service: SocketService, didReceiveEvent event: Event)
+    func socketServiceDidConnect(_ service: SocketService)
+    func socketServiceDidDisconnect(_ service: SocketService)
+    func socketService(_ service: SocketService, didEncounterError error: Error)
 }
 
 // Implement the delegate methods
-extension YourClass: SocketManagerDelegate {
-    func socketManager(_ manager: SocketManager, didReceiveEvent event: Event) {
+extension YourClass: SocketServiceDelegate {
+    func socketService(_ service: SocketService, didReceiveEvent event: Event) {
         // Handle the event
     }
     
-    func socketManagerDidConnect(_ manager: SocketManager) {
+    func socketServiceDidConnect(_ service: SocketService) {
         // Handle connection
     }
     
-    func socketManagerDidDisconnect(_ manager: SocketManager) {
+    func socketServiceDidDisconnect(_ service: SocketService) {
         // Handle disconnection
     }
     
-    func socketManager(_ manager: SocketManager, didEncounterError error: Error) {
+    func socketService(_ service: SocketService, didEncounterError error: Error) {
         // Handle error
     }
 }
@@ -139,7 +139,7 @@ if event.isMessage {
 
 ## Demo Application
 
-The `SocketManagerDemo` is a simple SwiftUI application that demonstrates how to use the `SocketManager` class. It allows you to:
+The `SocketServiceDemo` is a simple SwiftUI application that demonstrates how to use the `SocketService` class. It allows you to:
 
 - Connect to the OpenHands server
 - Send messages
@@ -148,9 +148,9 @@ The `SocketManagerDemo` is a simple SwiftUI application that demonstrates how to
 
 ## Implementation Status
 
-1. ✅ Implemented the `SocketManager` class for Socket.IO communication
+1. ✅ Implemented the `SocketService` class for Socket.IO communication
 2. ✅ Created the `Event` model for representing server events
-3. ✅ Implemented the `SocketManagerDelegate` protocol for event handling
+3. ✅ Implemented the `SocketServiceDelegate` protocol for event handling
 4. ✅ Created the `AppState` class to manage application state
 5. ✅ Built the basic UI components with SwiftUI
 6. ✅ Implemented the demo application for testing

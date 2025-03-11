@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// A simple demo application for testing the SocketManager
-struct SocketManagerDemo: View {
-    /// The socket manager view model
-    @StateObject private var viewModel = SocketManagerDemoViewModel()
+/// A simple demo application for testing the SocketService
+struct SocketServiceDemo: View {
+    /// The socket service view model
+    @StateObject private var viewModel = SocketServiceDemoViewModel()
     
     var body: some View {
         VStack(spacing: 20) {
@@ -135,10 +135,10 @@ struct SocketManagerDemo: View {
     }
 }
 
-/// View model for the SocketManagerDemo
-class SocketManagerDemoViewModel: ObservableObject, SocketManagerDelegate {
-    /// The socket manager instance
-    private let socketManager: SocketManager
+/// View model for the SocketServiceDemo
+class SocketServiceDemoViewModel: ObservableObject, SocketServiceDelegate {
+    /// The socket service instance
+    private let socketService: SocketService
     
     /// Flag indicating whether the socket is connected
     @Published var isConnected = false
@@ -155,57 +155,57 @@ class SocketManagerDemoViewModel: ObservableObject, SocketManagerDelegate {
     /// The latest error message
     @Published var error: String?
     
-    /// Initializes a new SocketManagerDemoViewModel
+    /// Initializes a new SocketServiceDemoViewModel
     init() {
-        // Create the socket manager with a default URL
+        // Create the socket service with a default URL
         // In a real app, you would get this from configuration
-        socketManager = SocketManager(serverUrl: URL(string: "http://openhands-server:3000")!)
-        socketManager.delegate = self
+        socketService = SocketService(serverUrl: URL(string: "http://openhands-server:3000")!)
+        socketService.delegate = self
     }
     
     /// Connects to the server with the current conversation ID
     func connect() {
         guard !conversationId.isEmpty else { return }
         
-        socketManager.connect(conversationId: conversationId)
+        socketService.connect(conversationId: conversationId)
     }
     
     /// Disconnects from the server
     func disconnect() {
-        socketManager.disconnect()
+        socketService.disconnect()
     }
     
     /// Sends a message to the server
     func sendMessage() {
         guard !messageText.isEmpty, isConnected else { return }
         
-        socketManager.sendMessage(content: messageText)
+        socketService.sendMessage(content: messageText)
         messageText = ""
     }
     
-    // MARK: - SocketManagerDelegate
+    // MARK: - SocketServiceDelegate
     
-    func socketManager(_ manager: SocketManager, didReceiveEvent event: Event) {
+    func socketService(_ service: SocketService, didReceiveEvent event: Event) {
         DispatchQueue.main.async {
             self.events.insert(event, at: 0)
             self.error = nil
         }
     }
     
-    func socketManagerDidConnect(_ manager: SocketManager) {
+    func socketServiceDidConnect(_ service: SocketService) {
         DispatchQueue.main.async {
             self.isConnected = true
             self.error = nil
         }
     }
     
-    func socketManagerDidDisconnect(_ manager: SocketManager) {
+    func socketServiceDidDisconnect(_ service: SocketService) {
         DispatchQueue.main.async {
             self.isConnected = false
         }
     }
     
-    func socketManager(_ manager: SocketManager, didEncounterError error: Error) {
+    func socketService(_ service: SocketService, didEncounterError error: Error) {
         DispatchQueue.main.async {
             self.error = error.localizedDescription
         }
@@ -213,5 +213,5 @@ class SocketManagerDemoViewModel: ObservableObject, SocketManagerDelegate {
 }
 
 #Preview {
-    SocketManagerDemo()
+    SocketServiceDemo()
 }

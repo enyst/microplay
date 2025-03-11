@@ -1,9 +1,9 @@
 import Foundation
 import SocketIO
 
-/// SocketManager is responsible for managing the WebSocket connection to the OpenHands server.
+/// SocketService is responsible for managing the WebSocket connection to the OpenHands server.
 /// It handles connection, disconnection, and event handling for the socket.io connection.
-class SocketManager {
+class SocketService {
     // MARK: - Properties
     
     /// The SocketIO manager instance
@@ -22,11 +22,11 @@ class SocketManager {
     private(set) var conversationId: String?
     
     /// Delegate for handling socket events
-    weak var delegate: SocketManagerDelegate?
+    weak var delegate: SocketServiceDelegate?
     
     // MARK: - Initialization
     
-    /// Initializes a new SocketManager with the specified server URL
+    /// Initializes a new SocketService with the specified server URL
     /// - Parameter serverUrl: The URL of the OpenHands server. Defaults to "http://openhands-server:3000"
     init(serverUrl: URL = URL(string: "http://openhands-server:3000")!) {
         self.manager = SocketManager(socketURL: serverUrl, config: [
@@ -187,7 +187,7 @@ class SocketManager {
             self.isConnected = true
             
             // Notify the delegate
-            self.delegate?.socketManagerDidConnect(self)
+            self.delegate?.socketServiceDidConnect(self)
         }
         
         // Handle disconnection event
@@ -197,7 +197,7 @@ class SocketManager {
             self.isConnected = false
             
             // Notify the delegate
-            self.delegate?.socketManagerDidDisconnect(self)
+            self.delegate?.socketServiceDidDisconnect(self)
         }
         
         // Handle error event
@@ -207,14 +207,14 @@ class SocketManager {
             if let errorString = data[0] as? String {
                 print("Socket error: \(errorString)")
                 let error = NSError(domain: "SocketIOError", code: -1, userInfo: [NSLocalizedDescriptionKey: errorString])
-                self.delegate?.socketManager(self, didEncounterError: error)
+                self.delegate?.socketService(self, didEncounterError: error)
             } else if let error = data[0] as? Error {
                 print("Socket error: \(error.localizedDescription)")
-                self.delegate?.socketManager(self, didEncounterError: error)
+                self.delegate?.socketService(self, didEncounterError: error)
             } else {
                 print("Socket error occurred")
                 let error = NSError(domain: "SocketIOError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unknown socket error"])
-                self.delegate?.socketManager(self, didEncounterError: error)
+                self.delegate?.socketService(self, didEncounterError: error)
             }
         }
         
@@ -225,7 +225,7 @@ class SocketManager {
             self.isConnected = true
             
             // Notify the delegate
-            self.delegate?.socketManagerDidConnect(self)
+            self.delegate?.socketServiceDidConnect(self)
         }
         
         // Handle oh_event from server
@@ -235,7 +235,7 @@ class SocketManager {
             guard let eventData = data[0] as? [String: Any] else {
                 print("Invalid event data received")
                 let error = NSError(domain: "SocketIOError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid event data received"])
-                self.delegate?.socketManager(self, didEncounterError: error)
+                self.delegate?.socketService(self, didEncounterError: error)
                 return
             }
             
@@ -327,6 +327,6 @@ class SocketManager {
         }
         
         // Notify the delegate
-        delegate?.socketManager(self, didReceiveEvent: event)
+        delegate?.socketService(self, didReceiveEvent: event)
     }
 }

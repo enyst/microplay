@@ -3,12 +3,12 @@ import SwiftUI
 
 /// AppState is responsible for managing the state of the application.
 /// It acts as a central store for all application data and coordinates
-/// between the UI and the socket manager.
+/// between the UI and the socket service.
 class AppState: ObservableObject {
     // MARK: - Properties
     
-    /// The socket manager instance
-    private let socketManager: SocketManager
+    /// The socket service instance
+    private let socketService: SocketService
     
     /// Flag indicating whether the socket is connected
     @Published var isConnected = false
@@ -36,8 +36,8 @@ class AppState: ObservableObject {
     /// Initializes a new AppState with the specified server URL
     /// - Parameter serverUrl: The URL of the OpenHands server. Defaults to "http://openhands-server:3000"
     init(serverUrl: URL = URL(string: "http://openhands-server:3000")!) {
-        self.socketManager = SocketManager(serverUrl: serverUrl)
-        self.socketManager.delegate = self
+        self.socketService = SocketService(serverUrl: serverUrl)
+        self.socketService.delegate = self
     }
     
     // MARK: - Public Methods
@@ -48,12 +48,12 @@ class AppState: ObservableObject {
         guard !conversationId.isEmpty else { return }
         
         self.conversationId = conversationId
-        socketManager.connect(conversationId: conversationId)
+        socketService.connect(conversationId: conversationId)
     }
     
     /// Disconnects from the OpenHands server
     func disconnect() {
-        socketManager.disconnect()
+        socketService.disconnect()
     }
     
     /// Sends a message to the OpenHands server
@@ -61,7 +61,7 @@ class AppState: ObservableObject {
     func sendMessage(content: String) {
         guard !content.isEmpty, isConnected else { return }
         
-        socketManager.sendMessage(content: content)
+        socketService.sendMessage(content: content)
         userMessage = ""
     }
     
@@ -70,7 +70,7 @@ class AppState: ObservableObject {
     func executeCommand(command: String) {
         guard !command.isEmpty, isConnected else { return }
         
-        socketManager.executeCommand(command: command)
+        socketService.executeCommand(command: command)
     }
     
     /// Reads a file from the OpenHands server
@@ -78,7 +78,7 @@ class AppState: ObservableObject {
     func readFile(path: String) {
         guard !path.isEmpty, isConnected else { return }
         
-        socketManager.readFile(path: path)
+        socketService.readFile(path: path)
     }
     
     /// Writes to a file on the OpenHands server
@@ -88,7 +88,7 @@ class AppState: ObservableObject {
     func writeFile(path: String, content: String) {
         guard !path.isEmpty, !content.isEmpty, isConnected else { return }
         
-        socketManager.writeFile(path: path, content: content)
+        socketService.writeFile(path: path, content: content)
     }
     
     /// Edits a file on the OpenHands server
@@ -99,7 +99,7 @@ class AppState: ObservableObject {
     func editFile(path: String, oldContent: String, newContent: String) {
         guard !path.isEmpty, !oldContent.isEmpty, !newContent.isEmpty, isConnected else { return }
         
-        socketManager.editFile(path: path, oldContent: oldContent, newContent: newContent)
+        socketService.editFile(path: path, oldContent: oldContent, newContent: newContent)
     }
     
     /// Navigates to a URL in the browser
@@ -107,7 +107,7 @@ class AppState: ObservableObject {
     func browseUrl(url: String) {
         guard !url.isEmpty, isConnected else { return }
         
-        socketManager.browseUrl(url: url)
+        socketService.browseUrl(url: url)
     }
     
     /// Interacts with the browser
@@ -115,14 +115,14 @@ class AppState: ObservableObject {
     func browseInteractive(code: String) {
         guard !code.isEmpty, isConnected else { return }
         
-        socketManager.browseInteractive(code: code)
+        socketService.browseInteractive(code: code)
     }
 }
 
-// MARK: - SocketManagerDelegate
+// MARK: - SocketServiceDelegate
 
-extension AppState: SocketManagerDelegate {
-    func socketManager(_ manager: SocketManager, didReceiveEvent event: Event) {
+extension AppState: SocketServiceDelegate {
+    func socketService(_ service: SocketService, didReceiveEvent event: Event) {
         DispatchQueue.main.async {
             // Add the event to the events array
             self.events.insert(event, at: 0)
@@ -140,20 +140,20 @@ extension AppState: SocketManagerDelegate {
         }
     }
     
-    func socketManagerDidConnect(_ manager: SocketManager) {
+    func socketServiceDidConnect(_ service: SocketService) {
         DispatchQueue.main.async {
             self.isConnected = true
             self.error = nil
         }
     }
     
-    func socketManagerDidDisconnect(_ manager: SocketManager) {
+    func socketServiceDidDisconnect(_ service: SocketService) {
         DispatchQueue.main.async {
             self.isConnected = false
         }
     }
     
-    func socketManager(_ manager: SocketManager, didEncounterError error: Error) {
+    func socketService(_ service: SocketService, didEncounterError error: Error) {
         DispatchQueue.main.async {
             self.error = error.localizedDescription
         }
