@@ -24,11 +24,16 @@ class SocketService {
     /// Delegate for handling socket events
     weak var delegate: SocketServiceDelegate?
     
+    /// The application state
+    private let appState: AppState?
+    
     // MARK: - Initialization
     
     /// Initializes a new SocketService with the specified server URL
-    /// - Parameter serverUrl: The URL of the OpenHands server. Defaults to "http://openhands-server:3000"
-    init(serverUrl: URL = URL(string: "http://openhands-server:3000")!) {
+    /// - Parameters:
+    ///   - serverUrl: The URL of the OpenHands server. Defaults to "http://openhands-server:3000"
+    ///   - appState: The application state to update. Defaults to nil
+    init(serverUrl: URL = URL(string: "http://openhands-server:3000")!, appState: AppState? = nil) {
         self.manager = SocketManager(socketURL: serverUrl, config: [
             .log(true),
             .compress,
@@ -38,6 +43,7 @@ class SocketService {
         ])
         
         self.socket = manager.defaultSocket
+        self.appState = appState
         setupEventListeners()
     }
     
@@ -186,6 +192,11 @@ class SocketService {
             print("Socket connected")
             self.isConnected = true
             
+            // Update app state
+            DispatchQueue.main.async {
+                self.appState?.isConnected = true
+            }
+            
             // Notify the delegate
             self.delegate?.socketServiceDidConnect(self)
         }
@@ -196,6 +207,11 @@ class SocketService {
             print("Socket disconnected")
             self.isConnected = false
             
+            // Update app state
+            DispatchQueue.main.async {
+                self.appState?.isConnected = false
+            }
+            
             // Notify the delegate
             self.delegate?.socketServiceDidDisconnect(self)
         }
@@ -204,18 +220,27 @@ class SocketService {
         socket.on(clientEvent: .error) { [weak self] data, _ in
             guard let self = self else { return }
             
+            var errorMessage: String = "Unknown socket error"
+            
             if let errorString = data[0] as? String {
                 print("Socket error: \(errorString)")
-                let error = NSError(domain: "SocketIOError", code: -1, userInfo: [NSLocalizedDescriptionKey: errorString])
-                self.delegate?.socketService(self, didEncounterError: error)
+                errorMessage = errorString
             } else if let error = data[0] as? Error {
                 print("Socket error: \(error.localizedDescription)")
-                self.delegate?.socketService(self, didEncounterError: error)
+                errorMessage = error.localizedDescription
             } else {
                 print("Socket error occurred")
-                let error = NSError(domain: "SocketIOError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unknown socket error"])
-                self.delegate?.socketService(self, didEncounterError: error)
             }
+            
+            let error = NSError(domain: "SocketIOError", code: -1, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+            
+            // Update app state
+            DispatchQueue.main.async {
+                self.appState?.error = errorMessage
+            }
+            
+            // Notify the delegate
+            self.delegate?.socketService(self, didEncounterError: error)
         }
         
         // Handle reconnection event
@@ -223,6 +248,11 @@ class SocketService {
             guard let self = self else { return }
             print("Socket reconnected")
             self.isConnected = true
+            
+            // Update app state
+            DispatchQueue.main.async {
+                self.appState?.isConnected = true
+            }
             
             // Notify the delegate
             self.delegate?.socketServiceDidConnect(self)
@@ -235,6 +265,13 @@ class SocketService {
             guard let eventData = data[0] as? [String: Any] else {
                 print("Invalid event data received")
                 let error = NSError(domain: "SocketIOError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid event data received"])
+                
+                // Update app state
+                DispatchQueue.main.async {
+                    self.appState?.error = "Invalid event data received"
+                }
+                
+                // Notify the delegate
                 self.delegate?.socketService(self, didEncounterError: error)
                 return
             }
@@ -261,72 +298,128 @@ class SocketService {
         // Print event information
         print("Received event #\(event.id) from \(event.source): \(event.message)")
         
-        // Process different event types
-        if event.isAction {
-            // Handle action events
-            print("Action: \(event.action ?? "unknown")")
-            if let args = event.args {
-                print("Args: \(args)")
-            }
-            
-            // Handle specific action types
-            if event.isMessage {
-                if let thought = event.thought {
-                    print("Thought: \(thought)")
-                }
-                if let imageUrls = event.imageUrls {
-                    print("Image URLs: \(imageUrls)")
-                }
-                if let waitForResponse = event.waitForResponse {
-                    print("Wait for response: \(waitForResponse)")
-                }
-            }
-        } else if event.isObservation {
-            // Handle observation events
-            print("Observation: \(event.observation ?? "unknown")")
-            if let content = event.content {
-                print("Content: \(content)")
-            }
-            if let extras = event.extras {
-                print("Extras: \(extras)")
-            }
-            
-            // Handle specific observation types
-            switch event.observation {
-            case "run":
-                if let command = event.command {
-                    print("Command: \(command)")
-                }
-                if let exitCode = event.exitCode {
-                    print("Exit code: \(exitCode)")
-                }
-            case "read", "write", "edit":
-                if let path = event.path {
-                    print("Path: \(path)")
-                }
-            case "browse":
-                if let url = event.url {
-                    print("URL: \(url)")
-                }
-            case "agent_state_changed":
-                if let agentState = event.agentState {
-                    print("Agent state: \(agentState)")
-                }
-            case "error":
-                if let errorId = event.errorId {
-                    print("Error ID: \(errorId)")
-                }
-            default:
-                break
-            }
-            
-            // Check for cause
-            if let cause = event.cause {
-                print("Caused by event #\(cause)")
-            }
-        }
+        // Update app state based on event type
+        updateAppState(with: event)
         
         // Notify the delegate
         delegate?.socketService(self, didReceiveEvent: event)
     }
+    
+    /// Updates the application state based on the received event
+    /// - Parameter event: The event to process
+    private func updateAppState(with event: Event) {
+        guard let appState = appState else { return }
+        
+        DispatchQueue.main.async {
+            // Add the event to the events array
+            if !appState.events.contains(where: { $0.id == event.id }) {
+                appState.events.append(event)
+                // Sort events by ID in descending order
+                appState.events.sort(by: { $0.id > $1.id })
+            }
+            
+            // Process different event types
+            if event.isAction {
+                self.processActionEvent(event, appState: appState)
+            } else if event.isObservation {
+                self.processObservationEvent(event, appState: appState)
+            }
+        }
+    }
+    
+    /// Processes an action event and updates the application state
+    /// - Parameters:
+    ///   - event: The action event to process
+    ///   - appState: The application state to update
+    private func processActionEvent(_ event: Event, appState: AppState) {
+        // Handle specific action types
+        if event.isMessage {
+            // Handle message action
+            if event.source == "agent" {
+                // Agent message
+                if let waitForResponse = event.waitForResponse {
+                    appState.isAwaitingUserConfirmation = waitForResponse
+                }
+            }
+        }
+    }
+    
+    /// Processes an observation event and updates the application state
+    /// - Parameters:
+    ///   - event: The observation event to process
+    ///   - appState: The application state to update
+    private func processObservationEvent(_ event: Event, appState: AppState) {
+        // Handle specific observation types
+        switch event.observation {
+        case "run":
+            // Handle command execution result
+            if let command = event.command, let exitCode = event.exitCode {
+                let terminalCommand = TerminalCommand(
+                    id: UUID(),
+                    command: command,
+                    output: event.content ?? "",
+                    exitCode: exitCode,
+                    isRunning: false
+                )
+                appState.terminalCommands.append(terminalCommand)
+            }
+            
+        case "read":
+            // Handle file read result
+            if let path = event.path {
+                appState.selectedFilePath = path
+                // You might want to store the file content in the app state as well
+            }
+            
+        case "write", "edit":
+            // Handle file write/edit result
+            if let path = event.path {
+                // Refresh file explorer after file operations
+                appState.refreshFileExplorer()
+            }
+            
+        case "browse":
+            // Handle browser output
+            if let url = event.url {
+                // Update browser state
+            }
+            
+        case "agent_state_changed":
+            // Handle agent state change
+            if let agentState = event.agentState {
+                appState.isAgentThinking = agentState == "thinking"
+                appState.isAgentExecuting = agentState == "executing"
+                
+                // Update other agent state properties as needed
+                switch agentState {
+                case "idle":
+                    appState.isAwaitingUserConfirmation = false
+                case "waiting_for_user_input":
+                    appState.isAwaitingUserConfirmation = true
+                default:
+                    break
+                }
+            }
+            
+        case "error":
+            // Handle error observation
+            if let errorId = event.errorId {
+                appState.error = "Error: \(errorId) - \(event.message)"
+            } else {
+                appState.error = "Error: \(event.message)"
+            }
+            
+        default:
+            break
+        }
+    }
+}
+
+/// Represents a terminal command with its output and status
+struct TerminalCommand: Identifiable {
+    let id: UUID
+    let command: String
+    let output: String
+    let exitCode: Int
+    let isRunning: Bool
 }
