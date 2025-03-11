@@ -86,35 +86,4 @@ Verify that Swift is correctly installed by running:
 swift --version
 ```
 
-You should see output similar to:
-
-```
-Swift version 6.0.3 (swift-6.0.3-RELEASE)
-Target: x86_64-unknown-linux-gnu
-```
-
-## Running Swift
-
-You can now run Swift commands and build Swift projects:
-
-```bash
-# Run the Swift REPL
-swift
-
-# Build a Swift package
-cd /path/to/swift/package
-swift build
-
-# Run Swift tests
-swift test
-```
-
-## Troubleshooting
-
-If you encounter any issues with the Swift installation:
-
-1. Ensure all dependencies are installed
-2. Verify the PATH is correctly set
-3. Check that the Swift binary is executable
-
 For more information, visit the [Swift website](https://swift.org/getting-started/).
