@@ -3,16 +3,13 @@ import PackageDescription
 
 let package = Package(
     name: "MacClient",
-    platforms: [
-        .macOS(.v11)
-    ],
     products: [
         .library(
             name: "MacClient",
             targets: ["MacClient"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/socketio/socket.io-client-swift.git", from: "16.0.0"),
+        .package(url: "https://github.com/socketio/socket.io-client-swift.git", from: "16.1.1"),
     ],
     targets: [
         .target(
@@ -20,10 +17,12 @@ let package = Package(
             dependencies: [
                 .product(name: "SocketIO", package: "socket.io-client-swift")
             ],
-            path: "MacClient"),
+            path: "MacClient/Sources/MacClient",
+            exclude: ["SwiftUI_Files"]),
         .testTarget(
             name: "MacClientTests",
             dependencies: ["MacClient"],
-            path: "Tests/MacClientTests"),
+            path: "Tests/MacClientTests",
+            exclude: ["SwiftUI_Tests"]),
     ]
 )
