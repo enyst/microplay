@@ -17,7 +17,9 @@ This document provides instructions for installing Swift on Debian 12 (Bookworm)
 
 ## Prerequisites
 
-Before installing Swift, you may need to install the following dependencies:
+Before installing Swift, you need to install the required dependencies for your system. You can find the most up-to-date list of dependencies for your specific Linux distribution and version at the [Swift.org tarball installation guide](https://www.swift.org/install/linux/tarball/).
+
+FOR EXAMPLE, the dependencies you may need to install for Debian 12 could be:
 
 ```bash
 sudo apt-get update
