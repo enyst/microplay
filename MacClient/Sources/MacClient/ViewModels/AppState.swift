@@ -19,6 +19,9 @@ class AppState: ObservableObject {
     /// The events received from the server
     @Published var events: [Event] = []
     
+    /// The messages in the chat interface
+    @Published var messages: [Message] = []
+    
     /// The latest error message
     @Published var error: String?
     
@@ -31,12 +34,25 @@ class AppState: ObservableObject {
     /// Flag indicating whether the agent is executing a command
     @Published var isAgentExecuting = false
     
+    /// Flag indicating whether the agent is awaiting user confirmation
+    @Published var isAwaitingUserConfirmation = false
+    
+    /// The currently selected file path
+    @Published var selectedFilePath: String? = nil
+    
+    /// The terminal commands executed
+    @Published var terminalCommands: [TerminalCommand] = []
+    
+    /// The file structure for the file explorer
+    @Published var fileStructure: [FileNode] = []
+    
     // MARK: - Initialization
     
     /// Initializes a new AppState with the specified server URL
     /// - Parameter serverUrl: The URL of the OpenHands server. Defaults to "http://openhands-server:3000"
     init(serverUrl: URL = URL(string: "http://openhands-server:3000")!) {
-        self.socketService = SocketService(serverUrl: serverUrl)
+        // Create socket service with reference to this AppState
+        self.socketService = SocketService(serverUrl: serverUrl, appState: self)
         self.socketService.delegate = self
     }
     
@@ -117,6 +133,18 @@ class AppState: ObservableObject {
         
         socketService.browseInteractive(code: code)
     }
+    
+    /// Refreshes the file explorer
+    func refreshFileExplorer() {
+        // This would typically involve a server request to get the file structure
+        // For now, we'll just log that it was called
+        print("Refreshing file explorer")
+        
+        // In a real implementation, you would:
+        // 1. Request the file structure from the server
+        // 2. Parse the response
+        // 3. Update the fileStructure property
+    }
 }
 
 // MARK: - SocketServiceDelegate
@@ -124,19 +152,23 @@ class AppState: ObservableObject {
 extension AppState: SocketServiceDelegate {
     func socketService(_ service: SocketService, didReceiveEvent event: Event) {
         DispatchQueue.main.async {
-            // Add the event to the events array
-            self.events.insert(event, at: 0)
-            
-            // Update the agent state based on the event
-            if event.isObservation, event.observation == "agent_state_changed" {
-                if let agentState = event.agentState {
-                    self.isAgentThinking = agentState == "thinking"
-                    self.isAgentExecuting = agentState == "executing"
-                }
+            // Add the event to the events array if it doesn't already exist
+            if !self.events.contains(where: { $0.id == event.id }) {
+                self.events.insert(event, at: 0)
             }
             
             // Clear any error
             self.error = nil
+        }
+    }
+    
+    func socketService(_ service: SocketService, didProcessEvent event: Event) {
+        DispatchQueue.main.async {
+            // Log that the event was processed
+            print("Event processed: \(event.id) - \(event.source) - \(event.message)")
+            
+            // Update the UI based on the processed event
+            // This is handled by the SocketService's updateAppState method
         }
     }
     
@@ -158,4 +190,14 @@ extension AppState: SocketServiceDelegate {
             self.error = error.localizedDescription
         }
     }
+}
+
+/// Represents a file node in the file explorer
+struct FileNode: Identifiable {
+    let id = UUID()
+    let name: String
+    let path: String
+    let isDirectory: Bool
+    var children: [FileNode]?
+    var isExpanded: Bool = false
 }
