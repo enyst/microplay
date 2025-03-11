@@ -17,7 +17,7 @@ This document provides instructions for installing Swift on Debian 12 (Bookworm)
 
 ## Prerequisites
 
-Before installing Swift, you need to install the required dependencies:
+Before installing Swift, you may need to install the following dependencies:
 
 ```bash
 sudo apt-get update
@@ -61,9 +61,7 @@ wget https://download.swift.org/swift-6.0.3-release/debian12/swift-6.0.3-RELEASE
 
 3. Extract the archive:
 
-```bash
-tar xzf swift-6.0.3-RELEASE-debian12.tar.gz
-```
+> **Note**: Make sure to install Swift in the `/workspace` directory, but outside the git repository to avoid committing the Swift binaries.
 
 4. Add Swift to your PATH by adding the following line to your `~/.bashrc` file:
 
@@ -74,8 +72,6 @@ source ~/.bashrc
 
 > **Note**: Make sure to update the version number in the PATH to match the version you downloaded.
 
-> **Note**: Make sure to install Swift in the `/workspace` directory, but outside the git repository to avoid committing the Swift binaries.
-
 ## Verify Installation
 
 Verify that Swift is correctly installed by running:
@@ -83,5 +79,3 @@ Verify that Swift is correctly installed by running:
 ```bash
 swift --version
 ```
-
-For more information, visit the [Swift website](https://swift.org/getting-started/).
