@@ -303,7 +303,8 @@ class SocketServiceTests: XCTestCase {
             "observation": "read",
             "content": "Hello, world!",
             "extras": [
-                "path": "/path/to/file.txt"
+                "path": "/path/to/file.txt",
+                "impl_source": "local"
             ] as [String : Any]
         ]
         
@@ -315,6 +316,38 @@ class SocketServiceTests: XCTestCase {
         XCTAssertEqual(mockAppState.messages.count, 1)
         XCTAssertEqual(mockAppState.messages[0].text, "File read: /path/to/file.txt")
         XCTAssertEqual(mockAppState.messages[0].sender, "system")
+        
+        // Reset mock state
+        mockAppState.messages = []
+        mockAppState.selectedFilePath = nil
+        
+        // Test with an image file
+        let imageEventData: [String: Any] = [
+            "id": 9,
+            "timestamp": "2023-03-11T10:08:00Z",
+            "source": "system",
+            "message": "Image file read",
+            "cause": 4,
+            "observation": "read",
+            "content": "binary image data",
+            "extras": [
+                "path": "/path/to/image.jpg",
+                "impl_source": "local",
+                "image_url": "https://example.com/image.jpg"
+            ] as [String : Any]
+        ]
+        
+        // Trigger the event
+        mockSocket.triggerEvent("event", with: [imageEventData])
+        
+        // Verify the file path was selected in the app state
+        XCTAssertEqual(mockAppState.selectedFilePath, "/path/to/image.jpg")
+        XCTAssertEqual(mockAppState.messages.count, 2)
+        XCTAssertEqual(mockAppState.messages[0].text, "File read: /path/to/image.jpg")
+        XCTAssertEqual(mockAppState.messages[0].sender, "system")
+        XCTAssertEqual(mockAppState.messages[1].text, "Image from file: /path/to/image.jpg")
+        XCTAssertEqual(mockAppState.messages[1].sender, "system")
+        XCTAssertEqual(mockAppState.messages[1].imageUrls, ["https://example.com/image.jpg"])
     }
     
     // Test processing a write observation event
@@ -378,7 +411,16 @@ class SocketServiceTests: XCTestCase {
             "observation": "browse",
             "extras": [
                 "url": "https://example.com",
-                "screenshot": "https://example.com/screenshot.jpg"
+                "screenshot": "https://example.com/screenshot.jpg",
+                "dom_object": [
+                    "title": "Example Domain",
+                    "text_content": "This domain is for use in illustrative examples in documents.",
+                    "links": [
+                        ["href": "https://www.iana.org/domains/example", "text": "More information"],
+                        ["href": "https://example.org", "text": "Example.org"]
+                    ]
+                ] as [String: Any],
+                "html": "<html><body>Example content</body></html>"
             ] as [String : Any]
         ]
         
@@ -386,12 +428,28 @@ class SocketServiceTests: XCTestCase {
         mockSocket.triggerEvent("event", with: [eventData])
         
         // Verify messages were added to the chat
-        XCTAssertEqual(mockAppState.messages.count, 2)
+        XCTAssertEqual(mockAppState.messages.count, 5)
+        
+        // Check the URL message
         XCTAssertEqual(mockAppState.messages[0].text, "Browsed URL: https://example.com")
         XCTAssertEqual(mockAppState.messages[0].sender, "system")
+        
+        // Check the screenshot message
         XCTAssertEqual(mockAppState.messages[1].text, "Browser screenshot")
         XCTAssertEqual(mockAppState.messages[1].sender, "system")
         XCTAssertEqual(mockAppState.messages[1].imageUrls, ["https://example.com/screenshot.jpg"])
+        
+        // Check the title message
+        XCTAssertEqual(mockAppState.messages[2].text, "Page title: Example Domain")
+        XCTAssertEqual(mockAppState.messages[2].sender, "system")
+        
+        // Check the content message
+        XCTAssertEqual(mockAppState.messages[3].text, "Page content: This domain is for use in illustrative examples in documents.")
+        XCTAssertEqual(mockAppState.messages[3].sender, "system")
+        
+        // Check the links message
+        XCTAssertEqual(mockAppState.messages[4].text, "Page links:\n1. [More information](https://www.iana.org/domains/example)\n2. [Example.org](https://example.org)\n")
+        XCTAssertEqual(mockAppState.messages[4].sender, "system")
     }
     
     // Test processing an agent_state_changed observation event

@@ -548,11 +548,31 @@ class SocketService {
                 
                 // Store the file content in the app state if available
                 if let content = event.content {
+                    // Store the file content in the app state
+                    // Note: In a real implementation, you would have a fileContents dictionary in AppState
+                    // appState.fileContents[path] = content
+                    
                     // Add a message to the chat with the file read result
                     let resultMessage = "File read: \(path)"
                     let message = Message(text: resultMessage, sender: "system")
                     if !appState.messages.contains(where: { $0.text == resultMessage }) {
                         appState.messages.append(message)
+                    }
+                    
+                    // If the file is an image, add it to the chat
+                    if path.lowercased().hasSuffix(".jpg") || 
+                       path.lowercased().hasSuffix(".jpeg") || 
+                       path.lowercased().hasSuffix(".png") || 
+                       path.lowercased().hasSuffix(".gif") {
+                        if let implSource = event.extras?["impl_source"] as? String,
+                           let imageUrl = event.extras?["image_url"] as? String {
+                            let imageMessage = Message(
+                                text: "Image from file: \(path)",
+                                sender: "system",
+                                imageUrls: [imageUrl]
+                            )
+                            appState.messages.append(imageMessage)
+                        }
                     }
                 } else {
                     // Handle error case where content is missing
@@ -634,7 +654,61 @@ class SocketService {
                 // Check for DOM object
                 if let domObject = extras["dom_object"] as? [String: Any] {
                     print("Browser DOM object available: \(domObject)")
-                    // You might want to process the DOM object for UI display
+                    
+                    // Process DOM object for UI display
+                    // In a real implementation, you might want to store this in the app state
+                    // and display it in a structured way in the UI
+                    
+                    // Extract title if available
+                    if let title = domObject["title"] as? String {
+                        let titleMessage = Message(
+                            text: "Page title: \(title)",
+                            sender: "system"
+                        )
+                        appState.messages.append(titleMessage)
+                    }
+                    
+                    // Extract page text content if available
+                    if let textContent = domObject["text_content"] as? String, !textContent.isEmpty {
+                        // Truncate long content for the message
+                        let truncatedContent = textContent.count > 500 
+                            ? textContent.prefix(500) + "..." 
+                            : textContent
+                        
+                        let contentMessage = Message(
+                            text: "Page content: \(truncatedContent)",
+                            sender: "system"
+                        )
+                        appState.messages.append(contentMessage)
+                    }
+                    
+                    // Extract links if available
+                    if let links = domObject["links"] as? [[String: Any]], !links.isEmpty {
+                        var linksText = "Page links:\n"
+                        for (index, link) in links.prefix(10).enumerated() {
+                            if let href = link["href"] as? String, 
+                               let text = link["text"] as? String {
+                                linksText += "\(index + 1). [\(text)](\(href))\n"
+                            }
+                        }
+                        
+                        if links.count > 10 {
+                            linksText += "... and \(links.count - 10) more links"
+                        }
+                        
+                        let linksMessage = Message(
+                            text: linksText,
+                            sender: "system"
+                        )
+                        appState.messages.append(linksMessage)
+                    }
+                }
+                
+                // Check for HTML content
+                if let htmlContent = extras["html"] as? String {
+                    print("HTML content available (length: \(htmlContent.count) characters)")
+                    // In a real implementation, you might want to store this in the app state
+                    // for later reference or processing
                 }
             } else {
                 // Handle error case where URL is missing

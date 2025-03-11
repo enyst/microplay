@@ -46,6 +46,15 @@ class AppState: ObservableObject {
     /// The file structure for the file explorer
     @Published var fileStructure: [FileNode] = []
     
+    /// The contents of files that have been read
+    @Published var fileContents: [String: String] = [:]
+    
+    /// The DOM objects from browser operations
+    @Published var domObjects: [String: [String: Any]] = [:]
+    
+    /// The HTML content from browser operations
+    @Published var htmlContents: [String: String] = [:]
+    
     // MARK: - Initialization
     
     /// Initializes a new AppState with the specified server URL
