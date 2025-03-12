@@ -1,67 +1,78 @@
-# Files to Prompt GitHub Interface
+# Files-to-Prompt GitHub Interface
 
-This repository provides a GitHub Pages interface for [simonw/files-to-prompt](https://github.com/simonw/files-to-prompt), a tool that concatenates files from a repository into a single prompt for use with LLMs.
+This repository provides a GitHub Pages interface for [simonw/files-to-prompt](https://github.com/simonw/files-to-prompt), a tool that concatenates a directory full of files into a single prompt for use with LLMs.
 
 ## Features
 
-- Browse public GitHub repositories and select files/directories
-- Generate prompts in different formats (plain text, Markdown, Claude XML)
-- Process files locally in the browser or via GitHub Actions workflow
-- No GitHub token required for public repositories when using the GitHub workflow
+- Browse GitHub repositories and select files/directories to include in your prompt
+- Process files locally in the browser or use a GitHub workflow
+- Support for all files-to-prompt options:
+  - Line numbers
+  - Hidden files
+  - Output formats (default, markdown, Claude XML)
+  - Ignore patterns
+  - .gitignore handling
 
-## How to Use
+## Usage
 
-### Option 1: GitHub Pages Interface with Local Processing
+### Local Processing
 
-1. Visit the GitHub Pages site
-2. Enter the repository owner and name
-3. Provide a GitHub token (required for local processing)
-4. Browse the repository and select files/directories
-5. Configure output options
+1. Enter the repository owner and name
+2. Enter a GitHub token with `repo` scope (required for accessing repository contents)
+3. Click "Load Repository"
+4. Browse the repository and select files/directories to include
+5. Configure options (line numbers, output format, etc.)
 6. Click "Generate Prompt"
-7. Copy the generated prompt to your clipboard
+7. Copy or download the generated prompt
 
-### Option 2: GitHub Pages Interface with GitHub Workflow
+### GitHub Workflow
 
-1. Visit the GitHub Pages site
-2. Enter the repository owner and name
-3. Browse the repository and select files/directories
-4. Configure output options
-5. Click "Generate Prompt"
-6. Follow the instructions to trigger the GitHub workflow
-7. Download the generated prompt from the workflow artifacts
+For larger repositories or when you don't want to use a personal access token, you can use the GitHub workflow option:
+
+1. Enter the repository owner and name
+2. Click "Load Repository"
+3. Browse the repository and select files/directories to include
+4. Configure options (line numbers, output format, etc.)
+5. Uncheck "Process files locally"
+6. Click "Generate Prompt"
+7. Follow the instructions to trigger the GitHub workflow
+8. Download the generated prompt from the workflow artifacts
 
 ## GitHub Workflow
 
-The repository includes a GitHub workflow that can be triggered manually to generate prompts. The workflow:
+The repository includes a GitHub workflow file (`.github/workflows/files-to-prompt.yml`) that can be triggered manually to process files from a repository and generate a prompt.
 
-1. Checks out the specified repository
-2. Installs the files-to-prompt tool
-3. Runs the tool with the specified options
-4. Uploads the generated prompt as a workflow artifact
+### Workflow Inputs
 
-## Setup
+- `repository`: GitHub repository (format: owner/repo)
+- `branch`: Branch name
+- `paths`: Comma-separated list of file/directory paths to include
+- `include_hidden`: Include hidden files
+- `line_numbers`: Include line numbers
+- `output_format`: Output format (default, markdown, cxml)
+- `ignore_patterns`: Comma-separated list of patterns to ignore
+- `ignore_gitignore`: Ignore .gitignore files
 
-To set up this interface for your own use:
+### Workflow Outputs
 
-1. Fork this repository
-2. Enable GitHub Pages for the repository
-3. The interface will be available at `https://[your-username].github.io/[repo-name]/`
+The workflow produces an artifact containing:
+- `prompt.txt`: The generated prompt
+- `metadata.json`: Metadata about the generation process
 
-## Local Development
+## Security Considerations
 
-To run the interface locally:
+- GitHub tokens are stored only in your browser's local storage and are never sent to any server other than GitHub's API
+- When using the GitHub workflow option, no token is required for public repositories
+- The workflow runs in the context of the repository, so it can only access files that are part of the repository
 
-```bash
-# Clone the repository
-git clone https://github.com/[your-username]/[repo-name].git
-cd [repo-name]
+## Development
 
-# Serve the files using a local web server
-python -m http.server
-```
+To contribute to this project:
 
-Then visit `http://localhost:8000` in your browser.
+1. Clone the repository
+2. Make your changes
+3. Test locally using a web server (e.g., `python -m http.server`)
+4. Submit a pull request
 
 ## License
 

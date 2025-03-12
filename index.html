@@ -207,8 +207,8 @@
   
   <div class="token-input">
     <h2>GitHub Authentication</h2>
-    <p>A GitHub token is required to access repository contents when using local processing. This token is stored only in your browser and is never sent to our servers.</p>
-    <p><strong>Note:</strong> If you're using the GitHub workflow option (default), a token is not required here as the workflow will use GitHub's built-in token.</p>
+    <p>A GitHub token is required to access repository contents. This token is stored only in your browser and is never sent to our servers.</p>
+    <p><strong>Note:</strong> For public repositories, a token is only required when using local processing. The GitHub workflow can process public repositories without a token.</p>
     <label for="github-token">GitHub Token (with repo scope):</label>
     <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
   </div>
@@ -230,7 +230,25 @@
       </select>
     </label>
     <label>
-      <input type="checkbox" id="local-processing"> Process files locally (no GitHub workflow)
+      <input type="checkbox" id="local-processing" checked> Process files locally
+    </label>
+    <div id="workflow-info" style="display: none; margin-top: 15px; padding: 10px; background-color: #f0f7ff; border-radius: 4px;">
+      <h3>GitHub Workflow</h3>
+      <p>When using the GitHub workflow option:</p>
+      <ol>
+        <li>The workflow will be triggered in the repository.</li>
+        <li>Files will be processed on GitHub's servers.</li>
+        <li>Results will be available as a downloadable artifact.</li>
+        <li>You'll need to visit the Actions tab in the repository to download the results.</li>
+      </ol>
+      <p><strong>Note:</strong> This requires that you have write access to the repository.</p>
+    </div>
+    <label id="ignore-patterns-container" style="margin-top: 10px;">
+      Ignore patterns (comma-separated):
+      <input type="text" id="ignore-patterns" placeholder="*.log, temp*">
+    </label>
+    <label>
+      <input type="checkbox" id="ignore-gitignore"> Ignore .gitignore files
     </label>
   </div>
   
@@ -280,6 +298,9 @@
     const selectAllCheckbox = document.getElementById('select-all-checkbox');
     const generateBtn = document.getElementById('generate-btn');
     const localProcessingCheckbox = document.getElementById('local-processing');
+    const workflowInfoDiv = document.getElementById('workflow-info');
+    const ignorePatterns = document.getElementById('ignore-patterns');
+    const ignoreGitignore = document.getElementById('ignore-gitignore');
     const outputContainer = document.getElementById('output-container');
     const outputText = document.getElementById('output-text');
     const copyOutputBtn = document.getElementById('copy-output-btn');
@@ -290,21 +311,35 @@
     let selectedPaths = new Set();
     let fileCache = {};
     
+    // Toggle workflow info based on local processing checkbox
+    localProcessingCheckbox.addEventListener('change', () => {
+      workflowInfoDiv.style.display = localProcessingCheckbox.checked ? 'none' : 'block';
+      
+      // Update token requirement message
+      const tokenRequiredMsg = document.querySelector('.token-input p:nth-child(2)');
+      if (tokenRequiredMsg) {
+        if (localProcessingCheckbox.checked) {
+          tokenRequiredMsg.innerHTML = '<strong>Note:</strong> For public repositories, a token is only required when using local processing. The GitHub workflow can process public repositories without a token.';
+        } else {
+          tokenRequiredMsg.innerHTML = '<strong>Note:</strong> No token is required for public repositories when using the GitHub workflow. You only need a token if you have write access to the repository to trigger the workflow.';
+        }
+      }
+    });
+    
     // Load repository
     loadRepoBtn.addEventListener('click', () => {
       const owner = ownerInput.value.trim();
       const repo = repoInput.value.trim();
       const branch = branchInput.value.trim() || 'main';
       const token = tokenInput.value.trim();
-      const isLocalProcessing = localProcessingCheckbox.checked;
       
       if (!owner || !repo) {
         alert('Please enter both owner and repository name');
         return;
       }
       
-      if (isLocalProcessing && !token) {
-        alert('Please enter a GitHub token when using local processing');
+      if (localProcessingCheckbox.checked && !token) {
+        alert('Please enter a GitHub token for local processing');
         return;
       }
       
@@ -327,23 +362,14 @@
       
       try {
         const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
-        
-        // Set up headers based on whether a token is provided
-        const headers = {
-          'Accept': 'application/vnd.github.v3+json'
-        };
-        
-        if (token) {
-          headers['Authorization'] = `token ${token}`;
-        }
-        
-        const response = await fetch(url, { headers });
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
         
         if (!response.ok) {
-          // If we get a 403 and no token was provided, suggest using a token
-          if (response.status === 403 && !token) {
-            throw new Error('Rate limit exceeded. Please provide a GitHub token for higher rate limits.');
-          }
           throw new Error(`Failed to fetch repository contents: ${response.statusText}`);
         }
         
@@ -579,23 +605,14 @@
         }
         
         const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
-        
-        // Set up headers based on whether a token is provided
-        const headers = {
-          'Accept': 'application/vnd.github.v3+json'
-        };
-        
-        if (token) {
-          headers['Authorization'] = `token ${token}`;
-        }
-        
-        const response = await fetch(url, { headers });
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
         
         if (!response.ok) {
-          // If we get a 403 and no token was provided, suggest using a token
-          if (response.status === 403 && !token) {
-            throw new Error('Rate limit exceeded. Please provide a GitHub token for higher rate limits.');
-          }
           throw new Error(`Failed to fetch file content: ${response.statusText}`);
         }
         
@@ -761,42 +778,45 @@
           outputContainer.style.display = 'block';
         } else {
           // Use GitHub workflow
-          const fullRepo = `${owner}/${repo}`;
-          const pathsArray = Array.from(selectedPaths);
-          const pathsString = pathsArray.join(',');
+          const repoFullName = `${owner}/${repo}`;
+          const pathsList = Array.from(selectedPaths).join(',');
+          const outputFormat = document.getElementById('output-format').value;
           const lineNumbers = document.getElementById('line-numbers').checked;
           const includeHidden = document.getElementById('include-hidden').checked;
-          const outputFormat = document.getElementById('output-format').value;
+          const ignorePatternsList = ignorePatterns.value.trim();
+          const ignoreGitignoreValue = ignoreGitignore.checked;
           
-          // Create a link to the GitHub workflow dispatch page
-          const workflowUrl = `https://github.com/${owner}/microplay/actions/workflows/files-to-prompt.yml`;
+          // Create workflow URL
+          const workflowUrl = `https://github.com/${repoFullName}/actions/workflows/files-to-prompt.yml`;
           
-          // Create a message with instructions
-          const message = `
-            <div class="success">
-              <h3>GitHub Workflow</h3>
-              <p>To run the files-to-prompt tool via GitHub Actions, please follow these steps:</p>
-              <ol>
-                <li>Go to the <a href="${workflowUrl}" target="_blank">Files to Prompt workflow page</a></li>
-                <li>Click "Run workflow"</li>
-                <li>Enter the following values:</li>
-                <ul>
-                  <li>Repository name: <strong>${fullRepo}</strong></li>
-                  <li>Branch name: <strong>${branch}</strong></li>
-                  <li>Paths: <strong>${pathsString}</strong></li>
-                  <li>Line numbers: <strong>${lineNumbers}</strong></li>
-                  <li>Include hidden files: <strong>${includeHidden}</strong></li>
-                  <li>Output format: <strong>${outputFormat}</strong></li>
-                </ul>
-                <li>Click "Run workflow"</li>
-                <li>Wait for the workflow to complete</li>
-                <li>Download the artifact from the workflow run page</li>
-              </ol>
-            </div>
-          `;
+          // Show instructions
+          outputText.innerHTML = `
+<h3>GitHub Workflow Instructions</h3>
+
+<p>To run the files-to-prompt workflow:</p>
+
+<ol>
+  <li>Visit the <a href="${workflowUrl}" target="_blank">GitHub Actions workflow page</a></li>
+  <li>Click on "Run workflow"</li>
+  <li>Enter the following parameters:</li>
+</ol>
+
+<pre>
+Repository: ${repoFullName}
+Branch: ${branch}
+Paths: ${pathsList}
+Include hidden files: ${includeHidden}
+Line numbers: ${lineNumbers}
+Output format: ${outputFormat}
+${ignorePatternsList ? `Ignore patterns: ${ignorePatternsList}` : ''}
+${ignoreGitignoreValue ? 'Ignore .gitignore files: true' : ''}
+</pre>
+
+<p>After the workflow completes, you can download the generated prompt from the workflow run page.</p>
+
+<p><strong>Note:</strong> If this is the first time running the workflow, you may need to enable GitHub Actions for this repository.</p>
+`;
           
-          // Display the message
-          outputText.innerHTML = message;
           outputContainer.style.display = 'block';
         }
       } catch (error) {
