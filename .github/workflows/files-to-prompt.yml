@@ -1,0 +1,109 @@
+name: Files to Prompt
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Repository name (owner/repo)'
+        required: true
+      branch:
+        description: 'Branch name'
+        required: true
+        default: 'main'
+      paths:
+        description: 'Comma-separated list of file or directory paths'
+        required: true
+      line_numbers:
+        description: 'Include line numbers'
+        required: false
+        default: 'false'
+        type: boolean
+      include_hidden:
+        description: 'Include hidden files'
+        required: false
+        default: 'false'
+        type: boolean
+      output_format:
+        description: 'Output format (default, markdown, cxml)'
+        required: false
+        default: 'markdown'
+        type: choice
+        options:
+          - default
+          - markdown
+          - cxml
+
+jobs:
+  generate-prompt:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.event.inputs.repo }}
+          ref: ${{ github.event.inputs.branch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install files-to-prompt
+        run: pip install files-to-prompt
+      
+      - name: Generate prompt
+        id: generate
+        run: |
+          # Convert comma-separated paths to space-separated
+          PATHS=$(echo "${{ github.event.inputs.paths }}" | tr ',' ' ')
+          
+          # Build command with options
+          CMD="files-to-prompt $PATHS"
+          
+          if [ "${{ github.event.inputs.line_numbers }}" == "true" ]; then
+            CMD="$CMD --line-numbers"
+          fi
+          
+          if [ "${{ github.event.inputs.include_hidden }}" == "true" ]; then
+            CMD="$CMD --include-hidden"
+          fi
+          
+          if [ "${{ github.event.inputs.output_format }}" == "markdown" ]; then
+            CMD="$CMD --markdown"
+          elif [ "${{ github.event.inputs.output_format }}" == "cxml" ]; then
+            CMD="$CMD --cxml"
+          fi
+          
+          # Create output directory
+          mkdir -p output
+          
+          # Run command and save output
+          echo "Running command: $CMD"
+          $CMD -o output/prompt.txt
+          
+          # Set output file extension based on format
+          if [ "${{ github.event.inputs.output_format }}" == "markdown" ]; then
+            mv output/prompt.txt output/prompt.md
+            echo "output_file=prompt.md" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.output_format }}" == "cxml" ]; then
+            mv output/prompt.txt output/prompt.xml
+            echo "output_file=prompt.xml" >> $GITHUB_OUTPUT
+          else
+            echo "output_file=prompt.txt" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Upload prompt as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: files-to-prompt-output
+          path: output/${{ steps.generate.outputs.output_file }}
+          retention-days: 1
+      
+      - name: Generate response URL
+        run: |
+          echo "Your prompt has been generated and is available as an artifact in this workflow run."
+          echo "Download it from the 'Artifacts' section of this workflow run page."
