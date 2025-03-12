@@ -1,0 +1,130 @@
+name: Files to Prompt
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: 'GitHub repository (format: owner/repo)'
+        required: true
+        type: string
+      branch:
+        description: 'Branch name'
+        required: true
+        default: 'main'
+        type: string
+      paths:
+        description: 'Comma-separated list of file/directory paths to include'
+        required: true
+        type: string
+      include_hidden:
+        description: 'Include hidden files'
+        required: false
+        default: false
+        type: boolean
+      line_numbers:
+        description: 'Include line numbers'
+        required: false
+        default: false
+        type: boolean
+      output_format:
+        description: 'Output format'
+        required: true
+        default: 'default'
+        type: choice
+        options:
+          - default
+          - markdown
+          - cxml
+      ignore_patterns:
+        description: 'Comma-separated list of patterns to ignore'
+        required: false
+        type: string
+      ignore_gitignore:
+        description: 'Ignore .gitignore files'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  process-files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.inputs.repository }}
+          ref: ${{ github.event.inputs.branch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install files-to-prompt
+        run: |
+          python -m pip install --upgrade pip
+          pip install files-to-prompt
+          
+      - name: Process files
+        id: process-files
+        run: |
+          # Prepare command arguments
+          CMD_ARGS=""
+          
+          # Add paths (split by comma and trim whitespace)
+          PATHS=$(echo "${{ github.event.inputs.paths }}" | tr ',' '\n' | xargs)
+          
+          # Add format option
+          if [ "${{ github.event.inputs.output_format }}" = "markdown" ]; then
+            CMD_ARGS="$CMD_ARGS --markdown"
+          elif [ "${{ github.event.inputs.output_format }}" = "cxml" ]; then
+            CMD_ARGS="$CMD_ARGS --cxml"
+          fi
+          
+          # Add line numbers option
+          if [ "${{ github.event.inputs.line_numbers }}" = "true" ]; then
+            CMD_ARGS="$CMD_ARGS --line-numbers"
+          fi
+          
+          # Add include hidden option
+          if [ "${{ github.event.inputs.include_hidden }}" = "true" ]; then
+            CMD_ARGS="$CMD_ARGS --include-hidden"
+          fi
+          
+          # Add ignore patterns (split by comma and trim whitespace)
+          if [ -n "${{ github.event.inputs.ignore_patterns }}" ]; then
+            IGNORE_PATTERNS=$(echo "${{ github.event.inputs.ignore_patterns }}" | tr ',' '\n' | xargs -I{} echo "--ignore \"{}\"")
+            CMD_ARGS="$CMD_ARGS $IGNORE_PATTERNS"
+          fi
+          
+          # Add ignore gitignore option
+          if [ "${{ github.event.inputs.ignore_gitignore }}" = "true" ]; then
+            CMD_ARGS="$CMD_ARGS --ignore-gitignore"
+          fi
+          
+          # Create output directory
+          mkdir -p output
+          
+          # Run files-to-prompt and save output
+          echo "Running: files-to-prompt $PATHS $CMD_ARGS -o output/prompt.txt"
+          files-to-prompt $PATHS $CMD_ARGS -o output/prompt.txt
+          
+          # Create metadata file
+          cat > output/metadata.json << EOF
+          {
+            "repository": "${{ github.event.inputs.repository }}",
+            "branch": "${{ github.event.inputs.branch }}",
+            "paths": "${{ github.event.inputs.paths }}",
+            "format": "${{ github.event.inputs.output_format }}",
+            "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "generated_by": "files-to-prompt GitHub Action"
+          }
+          EOF
+          
+      - name: Upload output as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: files-to-prompt-output
+          path: output/
+          retention-days: 7
