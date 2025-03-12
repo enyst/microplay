@@ -207,7 +207,8 @@
   
   <div class="token-input">
     <h2>GitHub Authentication</h2>
-    <p>A GitHub token is required to access repository contents. This token is stored only in your browser and is never sent to our servers.</p>
+    <p>A GitHub token is required to access repository contents when using local processing. This token is stored only in your browser and is never sent to our servers.</p>
+    <p><strong>Note:</strong> If you're using the GitHub workflow option (default), a token is not required here as the workflow will use GitHub's built-in token.</p>
     <label for="github-token">GitHub Token (with repo scope):</label>
     <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
   </div>
@@ -295,14 +296,15 @@
       const repo = repoInput.value.trim();
       const branch = branchInput.value.trim() || 'main';
       const token = tokenInput.value.trim();
+      const isLocalProcessing = localProcessingCheckbox.checked;
       
       if (!owner || !repo) {
         alert('Please enter both owner and repository name');
         return;
       }
       
-      if (!token) {
-        alert('Please enter a GitHub token');
+      if (isLocalProcessing && !token) {
+        alert('Please enter a GitHub token when using local processing');
         return;
       }
       
@@ -325,14 +327,23 @@
       
       try {
         const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        });
+        
+        // Set up headers based on whether a token is provided
+        const headers = {
+          'Accept': 'application/vnd.github.v3+json'
+        };
+        
+        if (token) {
+          headers['Authorization'] = `token ${token}`;
+        }
+        
+        const response = await fetch(url, { headers });
         
         if (!response.ok) {
+          // If we get a 403 and no token was provided, suggest using a token
+          if (response.status === 403 && !token) {
+            throw new Error('Rate limit exceeded. Please provide a GitHub token for higher rate limits.');
+          }
           throw new Error(`Failed to fetch repository contents: ${response.statusText}`);
         }
         
@@ -568,14 +579,23 @@
         }
         
         const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        });
+        
+        // Set up headers based on whether a token is provided
+        const headers = {
+          'Accept': 'application/vnd.github.v3+json'
+        };
+        
+        if (token) {
+          headers['Authorization'] = `token ${token}`;
+        }
+        
+        const response = await fetch(url, { headers });
         
         if (!response.ok) {
+          // If we get a 403 and no token was provided, suggest using a token
+          if (response.status === 403 && !token) {
+            throw new Error('Rate limit exceeded. Please provide a GitHub token for higher rate limits.');
+          }
           throw new Error(`Failed to fetch file content: ${response.statusText}`);
         }
         
@@ -740,14 +760,43 @@
           outputText.textContent = output;
           outputContainer.style.display = 'block';
         } else {
-          // Use GitHub workflow (this is a placeholder - in a real implementation, you would trigger a GitHub workflow)
-          alert('GitHub workflow integration is not implemented in this demo. Please use local processing instead.');
+          // Use GitHub workflow
+          const fullRepo = `${owner}/${repo}`;
+          const pathsArray = Array.from(selectedPaths);
+          const pathsString = pathsArray.join(',');
+          const lineNumbers = document.getElementById('line-numbers').checked;
+          const includeHidden = document.getElementById('include-hidden').checked;
+          const outputFormat = document.getElementById('output-format').value;
           
-          // For demonstration purposes, we'll still process locally
-          const output = await processFilesLocally(owner, repo, branch, token);
+          // Create a link to the GitHub workflow dispatch page
+          const workflowUrl = `https://github.com/${owner}/microplay/actions/workflows/files-to-prompt.yml`;
           
-          // Display output
-          outputText.textContent = output;
+          // Create a message with instructions
+          const message = `
+            <div class="success">
+              <h3>GitHub Workflow</h3>
+              <p>To run the files-to-prompt tool via GitHub Actions, please follow these steps:</p>
+              <ol>
+                <li>Go to the <a href="${workflowUrl}" target="_blank">Files to Prompt workflow page</a></li>
+                <li>Click "Run workflow"</li>
+                <li>Enter the following values:</li>
+                <ul>
+                  <li>Repository name: <strong>${fullRepo}</strong></li>
+                  <li>Branch name: <strong>${branch}</strong></li>
+                  <li>Paths: <strong>${pathsString}</strong></li>
+                  <li>Line numbers: <strong>${lineNumbers}</strong></li>
+                  <li>Include hidden files: <strong>${includeHidden}</strong></li>
+                  <li>Output format: <strong>${outputFormat}</strong></li>
+                </ul>
+                <li>Click "Run workflow"</li>
+                <li>Wait for the workflow to complete</li>
+                <li>Download the artifact from the workflow run page</li>
+              </ol>
+            </div>
+          `;
+          
+          // Display the message
+          outputText.innerHTML = message;
           outputContainer.style.display = 'block';
         }
       } catch (error) {
